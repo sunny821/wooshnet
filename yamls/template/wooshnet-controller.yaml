@@ -1,0 +1,153 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: wooshnet-controller
+  namespace: kube-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    rbac.authorization.k8s.io/system-only: "true"
+  name: wooshnet-controller
+rules:
+  - apiGroups:
+      - "network.wooshnet.cn"
+    resources:
+      - vifpools
+      - vifpools/status
+      - wooshports
+      - wooshports/status
+    verbs:
+      - "*"
+  - apiGroups: ["k8s.cni.cncf.io"]
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - namespaces
+      - nodes
+      - configmaps
+      - endpoints
+      - services
+      - events
+      - roles
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+  - apiGroups:
+      - ""
+      - networking.k8s.io
+      - apps
+      - extensions
+    resources:
+      - networkpolicies
+      - services
+      - endpoints
+      - statefulsets
+      - daemonsets
+      - deployments
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: wooshnet-controller
+roleRef:
+  name: wooshnet-controller
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: wooshnet-controller
+    namespace: kube-system
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wooshnet-controller
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wooshnet-controller
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: wooshnet-controller
+    spec:
+      tolerations:
+      - operator: Exists
+        key: node.kubernetes.io/not-ready
+        effect: NoSchedule
+      - operator: Exists
+        key: node.kubernetes.io/unreachable
+        effect: NoSchedule
+      serviceAccountName: wooshnet-controller
+      hostNetwork: true
+      containers:
+      - image: "{{.REPO}}/wooshnet:{{.VERSION}}"
+        imagePullPolicy: Always
+        command: ["/usr/local/bin/wooshnet"]
+        name: wooshnet-controller
+        # resources:
+        #   requests:
+        #     cpu: 500m
+        #     memory: 500Mi
+        args:
+          - --mode=controller
+          - --metrics-bind-address=:8270
+          - --health-probe-bind-address=:8271
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: SYSTEM_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+      initContainers:
+      - image: "{{.REPO}}/networkcrd:{{.VERSION}}"
+        imagePullPolicy: Always
+        command: ["sh", "/root/crdupdate.sh"]
+        name: crdupdate
+      
+
+

@@ -1,0 +1,11 @@
+{
+    "insecure-registries": ["192.168.169.2:5000"],
+    "runtimes": {
+        "kata-runtime": {
+        "path": "/usr/local/bin/kata-runtime"
+        }
+    },
+    "cri-containerd": true,
+    "iptables": false,
+    "live-restore": true
+}

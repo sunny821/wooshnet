@@ -1,0 +1,232 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: wooshnet-daemon
+  namespace: kube-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    rbac.authorization.k8s.io/system-only: "true"
+  name: wooshnet-daemon
+rules:
+  - apiGroups:
+      - "network.wooshnet.cn"
+    resources:
+      - vifpools
+      - vifpools/status
+      - wooshports
+      - wooshports/status
+    verbs:
+      - "*"
+  - apiGroups: ["k8s.cni.cncf.io"]
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - namespaces
+      - nodes
+      - configmaps
+      - endpoints
+      - services
+      - events
+      - roles
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+  - apiGroups:
+      - ""
+      - networking.k8s.io
+      - apps
+      - extensions
+    resources:
+      - networkpolicies
+      - services
+      - endpoints
+      - statefulsets
+      - daemonsets
+      - deployments
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: wooshnet-daemon
+roleRef:
+  name: wooshnet-daemon
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+  - kind: ServiceAccount
+    name: wooshnet-daemon
+    namespace: kube-system
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: wooshnet-daemon
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: wooshnet-daemon
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: wooshnet-daemon
+    spec:
+      tolerations:
+      - operator: Equal
+        key: dedicated
+        value: network
+        effect: NoExecute
+      - operator: Equal
+        key: dedicated
+        value: master
+        effect: NoExecute
+      - operator: Exists
+        key: node.kubernetes.io/not-ready
+        effect: NoSchedule
+      - operator: Exists
+        key: node.kubernetes.io/unreachable
+        effect: NoSchedule
+      priorityClassName: system-cluster-critical
+      serviceAccountName: wooshnet-daemon
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - image: "{{.REPO}}/wooshnet:{{.VERSION}}"
+        imagePullPolicy: Always
+        command: ["/usr/local/bin/wooshnet"]
+        name: wooshnet-daemon
+        # resources:
+        #   requests:
+        #     cpu: 500m
+        #     memory: 500Mi
+        args:
+          - --mode=daemon
+        securityContext:
+          runAsUser: 0
+          privileged: true
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: SYSTEM_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        volumeMounts:
+          - mountPath: /lib/modules
+            name: modules
+          - mountPath: /run/openvswitch
+            name: host-run-ovs
+          - mountPath: /etc/openvswitch
+            name: host-etc-ovs
+          - mountPath: /run/ovn
+            name: host-run-ovn
+          - mountPath: /run/containerd/containerd.sock
+            name: containerd-sock
+          - mountPath: /run/netns
+            name: run-netns
+            mountPropagation: Bidirectional
+          - mountPath: /var/log/wooshnet
+            name: wooshnet-log
+          - mountPath: /var/run/wooshnet
+            name: wooshnet-run
+          - mountPath: /run/vc/vm
+            name: run-vm
+      initContainers:
+      - image: "{{.REPO}}/wooshnet:{{.VERSION}}"
+        imagePullPolicy: Always
+        command: ["sh", "/install_cni.sh"]
+        name: installcni
+        volumeMounts:
+          - mountPath: {{.CNI_CONF_PATH}}
+            name: cni-conf
+          - mountPath: {{.CNI_BIN_PATH}}
+            name: cni-bin
+      nodeSelector:
+        kubernetes.io/os: "linux"
+      volumes:
+        - name: host-run-ovs
+          hostPath:
+            path: /run/openvswitch
+            type: DirectoryOrCreate
+        - name: host-etc-ovs
+          hostPath:
+            path: {{.OVS_ETC}}
+            type: Directory
+        - name: host-run-ovn
+          hostPath:
+            path: /run/ovn
+            type: DirectoryOrCreate
+        - name: cni-conf
+          hostPath:
+            path: /etc/cni/net.d
+            type: DirectoryOrCreate
+        - name: cni-bin
+          hostPath:
+            path: /opt/cni/bin
+            type: DirectoryOrCreate
+        - name: run-netns
+          hostPath:
+            path: /run/netns
+            type: DirectoryOrCreate
+        - name: modules
+          hostPath:
+            path: /lib/modules
+            type: Directory
+        - name: wooshnet-log
+          hostPath:
+            path: /var/log/wooshnet
+            type: DirectoryOrCreate
+        - name: wooshnet-run
+          hostPath:
+            path: /var/run/wooshnet
+            type: DirectoryOrCreate
+        - name: containerd-sock
+          hostPath:
+            path: /run/containerd/containerd.sock
+            type: Socket
+        - name: run-vm
+          hostPath:
+            path: /run/vc/vm
+            type: DirectoryOrCreate
+

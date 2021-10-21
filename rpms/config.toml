@@ -1,0 +1,72 @@
+# disabled_plugins = ["cri"]
+
+root = "/var/lib/containerd"
+state = "/run/containerd"
+subreaper = true
+oom_score = 0
+
+[grpc]
+    address = "/run/containerd/containerd.sock"
+    uid = 0
+    gid = 0
+
+[debug]
+    address = "/run/containerd/debug.sock"
+    uid = 0
+    gid = 0
+    level = "info"
+
+[plugins]
+    [plugins.linux]
+        shim = "/usr/bin/containerd-shim"
+        shim_debug = true
+    [plugins.cri]
+        sandbox_image = "192.168.169.2:5000/pause:3.2"
+    [plugins.cri.cni]
+        # conf_dir is the directory in which the admin places a CNI conf.
+        conf_dir = "/etc/cni/net.d"
+    [plugins.cri.containerd]
+        no_pivot = false
+        snapshotter = "native"
+    [plugins.cri.containerd.default_runtime]
+        # runtime_type is the runtime type to use in containerd e.g. io.containerd.runtime.v1.linux
+        runtime_type = "io.containerd.runtime.v1.linux"
+    # "plugins.cri.containerd.untrusted_workload_runtime" is a runtime to run untrusted workloads on it.
+    [plugins.cri.containerd.untrusted_workload_runtime]
+        # runtime_type is the runtime type to use in containerd e.g. io.containerd.runtime.v1.linux
+        runtime_type = "io.containerd.kata.v2"
+        privileged_without_host_devices = true
+    [plugins.cri.containerd.runtimes]
+    [plugins.cri.containerd.runtimes.runc]
+        runtime_type = "io.containerd.runc.v2"
+    [plugins.cri.containerd.runtimes.runc.options]
+        NoPivotRoot = false
+        NoNewKeyring = false
+        ShimCgroup = ""
+        IoUid = 0
+        IoGid = 0
+        BinaryName = "runc"
+        Root = ""
+        CriuPath = ""
+        SystemdCgroup = false
+    [plugins.cri.containerd.runtimes.kata]
+        runtime_type = "io.containerd.kata.v2"
+        privileged_without_host_devices = true
+    [plugins.cri.containerd.runtimes.katacli]
+        runtime_type = "io.containerd.runc.v1"
+    [plugins.cri.containerd.runtimes.katacli.options]
+        NoPivotRoot = false
+        NoNewKeyring = false
+        ShimCgroup = ""
+        IoUid = 0
+        IoGid = 0
+        BinaryName = "/usr/local/bin/kata-runtime"
+        Root = ""
+        CriuPath = ""
+        SystemdCgroup = false 
+    [plugins.cri.registry]
+    [plugins.cri.registry.mirrors]
+    [plugins.cri.registry.mirrors."192.168.169.2:5000"]
+        endpoint = ["http://192.168.169.2:5000"]
+    [plugins.cri.registry.configs."192.168.169.2:5000".tls]
+        insecure_skip_verify = true

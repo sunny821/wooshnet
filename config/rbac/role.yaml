@@ -1,0 +1,112 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - configmaps/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - pods/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - pods/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - vifpools
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - vifpools/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - vifpools/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - wooshports
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - wooshports/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - wooshports/status
+  verbs:
+  - get
+  - patch
+  - update

@@ -1,0 +1,7 @@
+FROM ppc64le/alpine
+
+RUN mkdir /lib64 && ln -s /lib/libc.musl-ppc64le.so.1 /lib64/ld-linux-ppc64le.so.2
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
+RUN echo "export LC_ALL=zh_CN.UTF8" >> /etc/profile
+RUN apk add git tzdata socat make bash zstd util-linux curl
+ENV TZ Asia/Shanghai

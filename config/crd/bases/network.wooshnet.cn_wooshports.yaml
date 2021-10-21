@@ -1,0 +1,323 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.7.0
+  creationTimestamp: null
+  name: wooshports.network.wooshnet.cn
+spec:
+  group: network.wooshnet.cn
+  names:
+    kind: WooshPort
+    listKind: WooshPortList
+    plural: wooshports
+    shortNames:
+    - vport
+    singular: wooshport
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - description: nodeIP
+      jsonPath: .status.nodeIP
+      name: nodeIP
+      type: string
+    - description: portReady
+      jsonPath: .status.portReady
+      name: portReady
+      type: string
+    - description: deviceReady
+      jsonPath: .status.deviceReady
+      name: deviceReady
+      type: string
+    - description: podReady
+      jsonPath: .status.podReady
+      name: podReady
+      type: string
+    - description: ready
+      jsonPath: .status.ready
+      name: ready
+      type: string
+    - description: deleted
+      jsonPath: .spec.deleted
+      name: deleted
+      type: boolean
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: WooshPort is the Schema for the wooshports API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: WooshPortSpec defines the desired state of WooshPort
+            properties:
+              autoCreated:
+                type: boolean
+              deleted:
+                type: boolean
+              nodeName:
+                type: string
+              podName:
+                type: string
+              ports:
+                items:
+                  description: Port represents a Neutron port. See package documentation
+                    for a top-level description of what this is.
+                  properties:
+                    admin_state_up:
+                      description: Administrative state of port. If false (down),
+                        port does not forward packets.
+                      type: boolean
+                    allowed_address_pairs:
+                      description: Identifies the list of IP addresses the port will
+                        recognize/accept
+                      items:
+                        description: AddressPair contains the IP Address and the MAC
+                          address.
+                        properties:
+                          ip_address:
+                            type: string
+                          mac_address:
+                            type: string
+                        type: object
+                      type: array
+                    description:
+                      description: Describes the port.
+                      type: string
+                    device_id:
+                      description: Identifies the device (e.g., virtual server) using
+                        this port.
+                      type: string
+                    device_owner:
+                      description: 'Identifies the entity (e.g.: dhcp agent) using
+                        this port.'
+                      type: string
+                    fixed_ips:
+                      description: Specifies IP addresses for the port thus associating
+                        the port itself with the subnets where the IP addresses are
+                        picked from
+                      items:
+                        description: IP is a sub-struct that represents an individual
+                          IP.
+                        properties:
+                          cidr:
+                            type: string
+                          gateway:
+                            type: string
+                          ip_address:
+                            type: string
+                          subnet_id:
+                            type: string
+                        required:
+                        - subnet_id
+                        type: object
+                      type: array
+                    id:
+                      description: UUID for the port.
+                      type: string
+                    mac_address:
+                      description: Mac address to use on this port.
+                      type: string
+                    name:
+                      description: Human-readable name for the port. Might not be
+                        unique.
+                      type: string
+                    network_id:
+                      description: Network that this port is associated with.
+                      type: string
+                    project_id:
+                      description: ProjectID is the project owner of the port.
+                      type: string
+                    qos_policy_id:
+                      description: QoSPolicyID represents an associated QoS policy.
+                      type: string
+                    security_groups:
+                      description: Specifies the IDs of any security groups associated
+                        with a port.
+                      items:
+                        type: string
+                      type: array
+                    status:
+                      description: Indicates whether network is currently operational.
+                        Possible values include `ACTIVE', `DOWN', `BUILD', or `ERROR'.
+                        Plug-ins might define additional values.
+                      type: string
+                    tags:
+                      description: Tags optionally set via extensions/attributestags
+                      items:
+                        type: string
+                      type: array
+                    tenant_id:
+                      description: TenantID is the project owner of the port.
+                      type: string
+                  type: object
+                type: array
+            type: object
+          status:
+            description: WooshPortStatus defines the observed state of WooshPort
+            properties:
+              deviceReady:
+                type: boolean
+              message:
+                type: string
+              nodeIP:
+                type: string
+              nodeName:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: string
+              podName:
+                type: string
+              podNetns:
+                type: string
+              podPid:
+                format: int32
+                type: integer
+              podReady:
+                type: boolean
+              podRuntimeType:
+                type: string
+              portReady:
+                type: boolean
+              portStatus:
+                items:
+                  properties:
+                    PortReady:
+                      type: boolean
+                    admin_state_up:
+                      description: Administrative state of port. If false (down),
+                        port does not forward packets.
+                      type: boolean
+                    allowed_address_pairs:
+                      description: Identifies the list of IP addresses the port will
+                        recognize/accept
+                      items:
+                        description: AddressPair contains the IP Address and the MAC
+                          address.
+                        properties:
+                          ip_address:
+                            type: string
+                          mac_address:
+                            type: string
+                        type: object
+                      type: array
+                    description:
+                      description: Describes the port.
+                      type: string
+                    device_id:
+                      description: Identifies the device (e.g., virtual server) using
+                        this port.
+                      type: string
+                    device_owner:
+                      description: 'Identifies the entity (e.g.: dhcp agent) using
+                        this port.'
+                      type: string
+                    deviceReady:
+                      type: boolean
+                    fixed_ips:
+                      description: Specifies IP addresses for the port thus associating
+                        the port itself with the subnets where the IP addresses are
+                        picked from
+                      items:
+                        description: IP is a sub-struct that represents an individual
+                          IP.
+                        properties:
+                          cidr:
+                            type: string
+                          gateway:
+                            type: string
+                          ip_address:
+                            type: string
+                          subnet_id:
+                            type: string
+                        required:
+                        - subnet_id
+                        type: object
+                      type: array
+                    id:
+                      description: UUID for the port.
+                      type: string
+                    ifaceid:
+                      type: string
+                    ifname:
+                      type: string
+                    index:
+                      type: integer
+                    interface:
+                      type: string
+                    mac_address:
+                      description: Mac address to use on this port.
+                      type: string
+                    name:
+                      description: Human-readable name for the port. Might not be
+                        unique.
+                      type: string
+                    network_id:
+                      description: Network that this port is associated with.
+                      type: string
+                    nicname:
+                      type: string
+                    portId:
+                      type: string
+                    project_id:
+                      description: ProjectID is the project owner of the port.
+                      type: string
+                    qos_policy_id:
+                      description: QoSPolicyID represents an associated QoS policy.
+                      type: string
+                    security_groups:
+                      description: Specifies the IDs of any security groups associated
+                        with a port.
+                      items:
+                        type: string
+                      type: array
+                    status:
+                      description: Indicates whether network is currently operational.
+                        Possible values include `ACTIVE', `DOWN', `BUILD', or `ERROR'.
+                        Plug-ins might define additional values.
+                      type: string
+                    tags:
+                      description: Tags optionally set via extensions/attributestags
+                      items:
+                        type: string
+                      type: array
+                    tenant_id:
+                      description: TenantID is the project owner of the port.
+                      type: string
+                  required:
+                  - PortReady
+                  - deviceReady
+                  type: object
+                type: array
+              ready:
+                type: boolean
+            required:
+            - deviceReady
+            - podReady
+            - portReady
+            - ready
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

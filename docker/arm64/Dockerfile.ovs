@@ -1,0 +1,15 @@
+FROM arm64v8/fedora:34
+
+RUN echo "export LC_ALL=zh_CN.UTF8" >> /etc/profile
+RUN dnf install -y tzdata ca-certificates yum-utils
+ENV TZ Asia/Shanghai
+
+# RUN sed -e 's|^mirrorlist=|#mirrorlist=|g' -e 's|^#baseurl=http://mirror.centos.org|baseurl=https://mirrors.tuna.tsinghua.edu.cn|g' -i /etc/yum.repos.d/CentOS-*.repo
+RUN dnf install -y kmod iptables nftables iptables-nft ethtool iproute nc unbound unbound-devel ipset zstd net-tools
+RUN update-alternatives --set iptables /usr/sbin/iptables-nft && update-alternatives --set arptables /usr/sbin/arptables-nft && update-alternatives --set ebtables /usr/sbin/ebtables-nft
+COPY ./rpms/aarch64 /rpms
+RUN rpm -ivh --nodeps /rpms/*.rpm && yum clean all
+RUN mkdir -p /var/run/openvswitch && mkdir -p /var/run/ovn && mkdir -p /etc/cni/net.d && mkdir -p /opt/cni/bin
+# ADD ./bin/cni-plugins-linux-arm64-v0.9.1.tgz /cni/
+# ADD ./bin/cni-plugins-linux-arm64-v0.9.1.tgz /cni/
+RUN dnf install -y libatomic

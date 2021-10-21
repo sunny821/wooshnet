@@ -1,0 +1,22 @@
+FROM centos:8
+
+RUN echo "export LC_ALL=zh_CN.UTF8" >> /etc/profile
+RUN dnf install -y tzdata ca-certificates yum-utils
+ENV TZ Asia/Shanghai
+
+RUN sed -e 's|^mirrorlist=|#mirrorlist=|g' -e 's|^#baseurl=http://mirror.centos.org|baseurl=https://mirrors.tuna.tsinghua.edu.cn|g' -i /etc/yum.repos.d/CentOS-*.repo
+RUN dnf update -y
+RUN dnf install -y @'Development Tools' rpm-build dnf-plugins-core 
+ADD bin/openvswitch-2.15.0.tar.gz /root/
+RUN cd /root/openvswitch-2.15.0 
+RUN bash boot.sh
+RUN sed -e 's/@VERSION@/2.15.0/' rhel/openvswitch-fedora.spec.in  > /tmp/ovs.spec && dnf builddep /tmp/ovs.spec
+RUN bash configure --enable-libcapng --prefix=/usr --localstatedir=/var --sysconfdir=/etc CC=gcc CFLAGS="-g -O2 -msse4.2 -mpopcnt" --enable-static KARCH=arm64
+RUN make rpm-fedora RPMBUILD_OPT="--with check" -j6
+
+ADD bin/ovn-21.03.0.tar.gz /root/
+RUN cd /root/ovn-21.03.0
+RUN bash boot.sh
+RUN sed -e 's/@VERSION@/21.03.0/' rhel/ovn-fedora.spec.in > /tmp/ovn.spec
+RUN bash configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc --with-ovs-source=/root/openvswitch-2.15.0 CFLAGS="-O2 -g -msse4.2 -mpopcnt" --enable-static KARCH=arm64
+RUN make rpm-fedora RPMBUILD_OPT="--with check" -j6

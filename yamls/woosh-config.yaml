@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: woosh-config
+  namespace: kube-system
+data:
+  OS_AUTH_URL: "http://127.0.0.1:5000/v3"
+  OS_USERNAME: "woosh"
+  OS_PASSWORD: "woosh"
+  OS_DOMAIN_NAME: "Default"
+  BRIDGE_NAME: "br-int"

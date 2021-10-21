@@ -1,0 +1,390 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ovn-central
+  namespace:  kube-system
+  annotations:
+    kubernetes.io/description: |
+      OVN components: northd, nb and sb.
+spec:
+  replicas: {{.OVN_COUNT}}
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: ovn-central
+  template:
+    metadata:
+      labels:
+        app: ovn-central
+        component: network
+        type: infra
+    spec:
+      tolerations:
+      - operator: Exists
+        key: node.kubernetes.io/not-ready
+        effect: NoSchedule
+      - operator: Exists
+        key: node.kubernetes.io/unreachable
+        effect: NoSchedule
+      - operator: Equal
+        key: dedicated
+        value: network
+        effect: NoExecute
+      - operator: Equal
+        key: dedicated
+        value: master
+        effect: NoExecute
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: ovn-central
+              topologyKey: kubernetes.io/hostname
+      priorityClassName: system-cluster-critical
+      hostNetwork: true
+      shareProcessNamespace: true
+      containers:
+        - name: ovn-central
+          image: "{{.REPO}}/ovn-ovs:{{.OVNOVSVERSION}}"
+          imagePullPolicy: IfNotPresent
+          command: ["/start-db.sh"]
+          securityContext:
+            capabilities:
+              add: ["SYS_NICE"]
+          env:
+            - name: OVN_DB_IPS
+              value: {{.OVN_DB_IPS}}
+            - name: OVN_NB_DB
+              value: {{.OVN_NB_DB}}
+            - name: OVN_SB_DB
+              value: {{.OVN_SB_DB}}
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          # resources:
+          #   requests:
+          #     cpu: 1
+          #     memory: 3Gi
+          #   limits:
+          #     cpu: 3
+          #     memory: 6Gi
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - /ovn-healthcheck.sh
+            periodSeconds: 3
+            timeoutSeconds: 45
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - /ovn-healthcheck.sh
+            initialDelaySeconds: 30
+            periodSeconds: 7
+            failureThreshold: 5
+            timeoutSeconds: 45
+          volumeMounts:
+            - mountPath: /var/run/openvswitch
+              name: host-run-ovs
+            - mountPath: /var/run/ovn
+              name: host-run-ovn
+            - mountPath: /sys
+              name: host-sys
+              readOnly: true
+            - mountPath: /etc/openvswitch
+              name: host-config-openvswitch
+            - mountPath: /etc/ovn
+              name: host-config-ovn
+            - mountPath: /var/log/openvswitch
+              name: host-log-ovs
+            - mountPath: /var/log/ovn
+              name: host-log-ovn
+      nodeSelector:
+        network/ovn: "master"
+      volumes:
+        - name: host-run-ovs
+          hostPath:
+            path: /run/openvswitch
+        - name: host-run-ovn
+          hostPath:
+            path: /run/ovn
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: host-config-openvswitch
+          hostPath:
+            path: {{.OVS_ETC}}
+        - name: host-config-ovn
+          hostPath:
+            path: {{.OVN_DB_PATH}}
+        - name: host-log-ovs
+          hostPath:
+            path: {{.OVS_LOG}}
+        - name: host-log-ovn
+          hostPath:
+            path: {{.OVN_LOG}}
+
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: ovs
+  namespace:  kube-system
+  annotations:
+    kubernetes.io/description: |
+      This daemon set launches the openvswitch daemon.
+spec:
+  selector:
+    matchLabels:
+      app: ovs
+  updateStrategy:
+    type: OnDelete
+  template:
+    metadata:
+      labels:
+        app: ovs
+        component: network
+        type: infra
+    spec:
+      tolerations:
+      - operator: Equal
+        key: dedicated
+        value: network
+        effect: NoExecute
+      - operator: Equal
+        key: dedicated
+        value: master
+        effect: NoExecute
+      - operator: Exists
+        key: node.kubernetes.io/not-ready
+        effect: NoSchedule
+      priorityClassName: system-cluster-critical
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: openvswitch
+          image: "{{.REPO}}/ovn-ovs:{{.OVNOVSVERSION}}"
+          imagePullPolicy: IfNotPresent
+          command: ["/start-ovs.sh"]
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          env:
+            - name: OVN_DB_IPS
+              value: {{.OVN_DB_IPS}}
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - mountPath: /lib/modules
+              name: host-modules
+              readOnly: true
+            - mountPath: /var/run/openvswitch
+              name: host-run-ovs
+            - mountPath: /var/run/ovn
+              name: host-run-ovn
+            - mountPath: /sys
+              name: host-sys
+              readOnly: true
+            - mountPath: /etc/openvswitch
+              name: host-config-openvswitch
+            - mountPath: /etc/ovn
+              name: host-config-ovn
+            - mountPath: /var/log/openvswitch
+              name: host-log-ovs
+            - mountPath: /var/log/ovn
+              name: host-log-ovn
+          # resources:
+          #   requests:
+          #     cpu: 1
+          #     memory: 3Gi
+          #   limits:
+          #     cpu: 3
+          #     memory: 6Gi
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - /ovs-healthcheck.sh
+            periodSeconds: 3
+            timeoutSeconds: 45
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - /ovs-healthcheck.sh
+            initialDelaySeconds: 30
+            periodSeconds: 7
+            failureThreshold: 5
+            timeoutSeconds: 45
+      volumes:
+        - name: host-modules
+          hostPath:
+            path: /lib/modules
+        - name: host-run-ovs
+          hostPath:
+            path: /run/openvswitch
+        - name: host-run-ovn
+          hostPath:
+            path: /run/ovn
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: host-config-openvswitch
+          hostPath:
+            path: {{.OVS_ETC}}
+        - name: host-config-ovn
+          hostPath:
+            path: {{.OVN_DB_PATH}}
+        - name: host-log-ovs
+          hostPath:
+            path: {{.OVS_LOG}}
+        - name: host-log-ovn
+          hostPath:
+            path: {{.OVN_LOG}}
+
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: ovn-controller
+  namespace:  kube-system
+  annotations:
+    kubernetes.io/description: |
+      This daemon set launches the ovn-controller daemon.
+spec:
+  selector:
+    matchLabels:
+      app: ovn-controller
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: ovn-controller
+        component: network
+        type: infra
+    spec:
+      tolerations:
+      - operator: Equal
+        key: dedicated
+        value: network
+        effect: NoExecute
+      - operator: Equal
+        key: dedicated
+        value: master
+        effect: NoExecute
+      - operator: Exists
+        key: node.kubernetes.io/not-ready
+        effect: NoSchedule
+      priorityClassName: system-cluster-critical
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: ovn-controller
+          image: "{{.REPO}}/ovn-ovs:{{.OVNOVSVERSION}}"
+          imagePullPolicy: IfNotPresent
+          command: ["/start-ovncontroller.sh"]
+          securityContext:
+            runAsUser: 0
+            privileged: true
+          env:
+            - name: OVN_DB_IPS
+              value: {{.OVN_DB_IPS}}
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - mountPath: /lib/modules
+              name: host-modules
+              readOnly: true
+            - mountPath: /var/run/openvswitch
+              name: host-run-ovs
+            - mountPath: /var/run/ovn
+              name: host-run-ovn
+            - mountPath: /sys
+              name: host-sys
+              readOnly: true
+            - mountPath: /etc/openvswitch
+              name: host-config-openvswitch
+            - mountPath: /etc/ovn
+              name: host-config-ovn
+            - mountPath: /var/log/openvswitch
+              name: host-log-ovs
+            - mountPath: /var/log/ovn
+              name: host-log-ovn
+          # resources:
+          #   requests:
+          #     cpu: 1
+          #     memory: 3Gi
+          #   limits:
+          #     cpu: 3
+          #     memory: 6Gi
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - /ovncontroller-healthcheck.sh
+            periodSeconds: 3
+            timeoutSeconds: 45
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - /ovncontroller-healthcheck.sh
+            initialDelaySeconds: 30
+            periodSeconds: 7
+            failureThreshold: 5
+            timeoutSeconds: 45
+      volumes:
+        - name: host-modules
+          hostPath:
+            path: /lib/modules
+        - name: host-run-ovs
+          hostPath:
+            path: /run/openvswitch
+        - name: host-run-ovn
+          hostPath:
+            path: /run/ovn
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: host-config-openvswitch
+          hostPath:
+            path: {{.OVS_ETC}}
+        - name: host-config-ovn
+          hostPath:
+            path: {{.OVN_DB_PATH}}
+        - name: host-log-ovs
+          hostPath:
+            path: {{.OVS_LOG}}
+        - name: host-log-ovn
+          hostPath:
+            path: {{.OVN_LOG}}

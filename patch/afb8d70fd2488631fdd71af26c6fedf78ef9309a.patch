@@ -1,0 +1,19 @@
+From afb8d70fd2488631fdd71af26c6fedf78ef9309a Mon Sep 17 00:00:00 2001
+From: Mengxin Liu <mengxin@alauda.io>
+Date: Wed, 24 Feb 2021 11:54:16 +0800
+Subject: [PATCH] fix: add ovn-ic schema
+
+---
+ debian/ovn-central.install | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/debian/ovn-central.install b/debian/ovn-central.install
+index 095ca7cfaf..c0928f68a1 100644
+--- a/debian/ovn-central.install
++++ b/debian/ovn-central.install
+@@ -1,3 +1,5 @@
+ usr/bin/ovn-northd
+ usr/share/ovn/ovn-nb.ovsschema
+ usr/share/ovn/ovn-sb.ovsschema
++usr/share/ovn/ovn-ic-nb.ovsschema
++usr/share/ovn/ovn-ic-sb.ovsschema

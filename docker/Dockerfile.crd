@@ -1,0 +1,12 @@
+ARG REPO=127.0.0.1:5000/wooshnet
+ARG GOARCH=amd64
+FROM ${REPO}/kubectl:${GOARCH}
+ARG GOARCH=amd64
+WORKDIR /root
+COPY yamls/multus.yaml /root/multus.yaml
+COPY config/crd /root/crd
+
+RUN echo '#!/bin/sh' > crdupdate.sh && echo 'kubectl apply -k crd' >> crdupdate.sh
+CMD [ "sh", "/root/crdupdate.sh" ]
+# CMD ["kubectl", "apply", "-k", "/root/crd"]
+

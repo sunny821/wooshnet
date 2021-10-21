@@ -1,0 +1,36 @@
+domain: wooshnet.cn
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+projectName: wooshnet
+repo: wooshnet
+resources:
+- controller: true
+  domain: wooshnet.cn
+  group: network
+  kind: Pod
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: wooshnet.cn
+  group: network
+  kind: WooshPort
+  path: wooshnet/apis/network/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: wooshnet.cn
+  group: network
+  kind: VifPool
+  path: wooshnet/apis/network/v1
+  version: v1
+- controller: true
+  domain: wooshnet.cn
+  group: network
+  kind: ConfigMap
+  version: v1
+version: "3"

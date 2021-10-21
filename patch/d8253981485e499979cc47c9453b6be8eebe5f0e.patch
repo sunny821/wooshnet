@@ -1,0 +1,2886 @@
+From d8253981485e499979cc47c9453b6be8eebe5f0e Mon Sep 17 00:00:00 2001
+From: Wan Junjie <wanjunjie@bytedance.com>
+Date: Thu, 10 Dec 2020 13:12:45 +0800
+Subject: [PATCH] debian: fix ovn debian packaging and split from openvswitch
+
+Remove all openvswitch package files and rename the packages
+with prefix ovn-.
+
+Add a build option DATAPATH_CONFIGURE_OPTS. Like openvswitch,
+use '-with-ovs-source=' to pass the ovs source directory.
+
+Use command like below to generate the packages:
+DATAPATH_CONFIGURE_OPTS='--with-ovs-source=/home/wanjunjie/ovs'
+fakeroot debian/rules binary
+
+(cherry picked from commit c79629f081f3409c9ba588e71109b7eb99055329)
+---
+ debian/automake.mk                            |  51 ---
+ debian/changelog                              |  18 +-
+ debian/control                                | 263 +--------------
+ debian/control.modules.in                     |  20 --
+ debian/dkms.conf.in                           |  11 -
+ debian/ifupdown.sh                            | 107 ------
+ debian/libopenvswitch-dev.install             |  19 --
+ debian/libopenvswitch.install                 |   5 -
+ debian/openvswitch-common.dirs                |   1 -
+ debian/openvswitch-common.docs                |   0
+ debian/openvswitch-common.install             |  11 -
+ debian/openvswitch-common.manpages            |   7 -
+ debian/openvswitch-datapath-dkms.postinst     |  21 --
+ debian/openvswitch-datapath-dkms.prerm        |  15 -
+ ...atapath-module-_KVERS_.postinst.modules.in |  27 --
+ .../openvswitch-datapath-source.README.Debian |  31 --
+ debian/openvswitch-datapath-source.copyright  |  15 -
+ debian/openvswitch-datapath-source.dirs       |   1 -
+ debian/openvswitch-datapath-source.install    |   5 -
+ debian/openvswitch-ipsec.dirs                 |   1 -
+ debian/openvswitch-ipsec.init                 | 181 ----------
+ debian/openvswitch-ipsec.install              |   1 -
+ debian/openvswitch-pki.dirs                   |   1 -
+ debian/openvswitch-pki.postinst               |  41 ---
+ debian/openvswitch-pki.postrm                 |  43 ---
+ debian/openvswitch-switch.README.Debian       | 316 ------------------
+ debian/openvswitch-switch.dirs                |   2 -
+ debian/openvswitch-switch.init                | 147 --------
+ debian/openvswitch-switch.install             |  17 -
+ debian/openvswitch-switch.links               |   2 -
+ debian/openvswitch-switch.logrotate           |  16 -
+ debian/openvswitch-switch.manpages            |  12 -
+ debian/openvswitch-switch.postinst            |  60 ----
+ debian/openvswitch-switch.postrm              |  48 ---
+ debian/openvswitch-switch.template            |   8 -
+ debian/openvswitch-test.dirs                  |   1 -
+ debian/openvswitch-test.install               |   3 -
+ debian/openvswitch-test.manpages              |   1 -
+ .../openvswitch-testcontroller.README.Debian  |  12 -
+ debian/openvswitch-testcontroller.default     |  29 --
+ debian/openvswitch-testcontroller.dirs        |   1 -
+ debian/openvswitch-testcontroller.init        | 278 ---------------
+ debian/openvswitch-testcontroller.install     |   1 -
+ debian/openvswitch-testcontroller.manpages    |   1 -
+ debian/openvswitch-testcontroller.postinst    |  52 ---
+ debian/openvswitch-testcontroller.postrm      |  44 ---
+ debian/openvswitch-vtep.default               |   4 -
+ debian/openvswitch-vtep.dirs                  |   1 -
+ debian/openvswitch-vtep.init                  |  78 -----
+ debian/openvswitch-vtep.install               |   3 -
+ debian/openvswitch-vtep.manpages              |   1 -
+ debian/ovn-central.init                       |   8 +-
+ debian/ovn-central.install                    |   4 +-
+ debian/ovn-central.manpages                   |   2 +-
+ debian/ovn-common.install                     |   7 +-
+ debian/ovn-common.manpages                    |  24 +-
+ debian/ovn-common.postinst                    |   2 +-
+ debian/ovn-controller-vtep.init               |   8 +-
+ debian/ovn-controller-vtep.manpages           |   2 +-
+ debian/ovn-host.init                          |   8 +-
+ debian/ovn-host.manpages                      |   2 +-
+ debian/python-openvswitch.dirs                |   2 -
+ debian/python-openvswitch.install             |   1 -
+ debian/rules                                  |  47 +--
+ debian/rules.modules                          |  39 ---
+ 65 files changed, 56 insertions(+), 2134 deletions(-)
+ delete mode 100644 debian/control.modules.in
+ delete mode 100644 debian/dkms.conf.in
+ delete mode 100755 debian/ifupdown.sh
+ delete mode 100644 debian/libopenvswitch-dev.install
+ delete mode 100644 debian/libopenvswitch.install
+ delete mode 100644 debian/openvswitch-common.dirs
+ delete mode 100644 debian/openvswitch-common.docs
+ delete mode 100644 debian/openvswitch-common.install
+ delete mode 100644 debian/openvswitch-common.manpages
+ delete mode 100644 debian/openvswitch-datapath-dkms.postinst
+ delete mode 100644 debian/openvswitch-datapath-dkms.prerm
+ delete mode 100755 debian/openvswitch-datapath-module-_KVERS_.postinst.modules.in
+ delete mode 100644 debian/openvswitch-datapath-source.README.Debian
+ delete mode 100644 debian/openvswitch-datapath-source.copyright
+ delete mode 100644 debian/openvswitch-datapath-source.dirs
+ delete mode 100644 debian/openvswitch-datapath-source.install
+ delete mode 100644 debian/openvswitch-ipsec.dirs
+ delete mode 100644 debian/openvswitch-ipsec.init
+ delete mode 100644 debian/openvswitch-ipsec.install
+ delete mode 100644 debian/openvswitch-pki.dirs
+ delete mode 100755 debian/openvswitch-pki.postinst
+ delete mode 100755 debian/openvswitch-pki.postrm
+ delete mode 100644 debian/openvswitch-switch.README.Debian
+ delete mode 100644 debian/openvswitch-switch.dirs
+ delete mode 100755 debian/openvswitch-switch.init
+ delete mode 100644 debian/openvswitch-switch.install
+ delete mode 100644 debian/openvswitch-switch.links
+ delete mode 100644 debian/openvswitch-switch.logrotate
+ delete mode 100644 debian/openvswitch-switch.manpages
+ delete mode 100755 debian/openvswitch-switch.postinst
+ delete mode 100755 debian/openvswitch-switch.postrm
+ delete mode 100644 debian/openvswitch-switch.template
+ delete mode 100644 debian/openvswitch-test.dirs
+ delete mode 100644 debian/openvswitch-test.install
+ delete mode 100644 debian/openvswitch-test.manpages
+ delete mode 100644 debian/openvswitch-testcontroller.README.Debian
+ delete mode 100644 debian/openvswitch-testcontroller.default
+ delete mode 100644 debian/openvswitch-testcontroller.dirs
+ delete mode 100755 debian/openvswitch-testcontroller.init
+ delete mode 100644 debian/openvswitch-testcontroller.install
+ delete mode 100644 debian/openvswitch-testcontroller.manpages
+ delete mode 100755 debian/openvswitch-testcontroller.postinst
+ delete mode 100755 debian/openvswitch-testcontroller.postrm
+ delete mode 100644 debian/openvswitch-vtep.default
+ delete mode 100644 debian/openvswitch-vtep.dirs
+ delete mode 100644 debian/openvswitch-vtep.init
+ delete mode 100644 debian/openvswitch-vtep.install
+ delete mode 100644 debian/openvswitch-vtep.manpages
+ delete mode 100644 debian/python-openvswitch.dirs
+ delete mode 100644 debian/python-openvswitch.install
+ delete mode 100755 debian/rules.modules
+
+diff --git a/debian/automake.mk b/debian/automake.mk
+index 8a8d43c9f6..f099c26898 100644
+--- a/debian/automake.mk
++++ b/debian/automake.mk
+@@ -2,56 +2,9 @@ EXTRA_DIST += \
+ 	debian/changelog \
+ 	debian/compat \
+ 	debian/control \
+-	debian/control.modules.in \
+ 	debian/copyright \
+ 	debian/copyright.in \
+-	debian/dkms.conf.in \
+ 	debian/dirs \
+-	debian/libopenvswitch.install \
+-	debian/libopenvswitch-dev.install \
+-	debian/openvswitch-common.dirs \
+-	debian/openvswitch-common.docs \
+-	debian/openvswitch-common.install \
+-	debian/openvswitch-common.manpages \
+-	debian/openvswitch-datapath-module-_KVERS_.postinst.modules.in \
+-	debian/openvswitch-datapath-dkms.postinst \
+-	debian/openvswitch-datapath-dkms.prerm \
+-	debian/openvswitch-datapath-source.README.Debian \
+-	debian/openvswitch-datapath-source.copyright \
+-	debian/openvswitch-datapath-source.dirs \
+-	debian/openvswitch-datapath-source.install \
+-	debian/openvswitch-ipsec.dirs \
+-	debian/openvswitch-ipsec.init \
+-	debian/openvswitch-ipsec.install \
+-	debian/openvswitch-pki.dirs \
+-	debian/openvswitch-pki.postinst \
+-	debian/openvswitch-pki.postrm \
+-	debian/openvswitch-switch.README.Debian \
+-	debian/openvswitch-switch.dirs \
+-	debian/openvswitch-switch.init \
+-	debian/openvswitch-switch.install \
+-	debian/openvswitch-switch.logrotate \
+-	debian/openvswitch-switch.manpages \
+-	debian/openvswitch-switch.postinst \
+-	debian/openvswitch-switch.postrm \
+-	debian/openvswitch-switch.template \
+-	debian/openvswitch-switch.links \
+-	debian/openvswitch-test.dirs \
+-	debian/openvswitch-test.install \
+-	debian/openvswitch-test.manpages \
+-	debian/openvswitch-testcontroller.README.Debian \
+-	debian/openvswitch-testcontroller.default \
+-	debian/openvswitch-testcontroller.dirs \
+-	debian/openvswitch-testcontroller.init \
+-	debian/openvswitch-testcontroller.install \
+-	debian/openvswitch-testcontroller.manpages \
+-	debian/openvswitch-testcontroller.postinst \
+-	debian/openvswitch-testcontroller.postrm \
+-	debian/openvswitch-vtep.default \
+-	debian/openvswitch-vtep.dirs \
+-	debian/openvswitch-vtep.init \
+-	debian/openvswitch-vtep.install \
+-	debian/openvswitch-vtep.manpages \
+ 	debian/ovn-central.dirs \
+ 	debian/ovn-central.init \
+ 	debian/ovn-central.install \
+@@ -74,11 +27,7 @@ EXTRA_DIST += \
+ 	debian/ovn-host.postinst \
+ 	debian/ovn-host.postrm \
+ 	debian/ovn-host.template \
+-	debian/python-openvswitch.dirs \
+-	debian/python-openvswitch.install \
+ 	debian/rules \
+-	debian/rules.modules \
+-	debian/ifupdown.sh \
+ 	debian/source/format
+ 
+ check-debian-changelog-version:
+diff --git a/debian/changelog b/debian/changelog
+index 6a985dd196..032cc296bc 100644
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,22 +1,16 @@
+-OVN (20.06.2-1) unstable; urgency=low
++ovn (20.06.90-1) unstable; urgency=low
+ 
+-    * New upstream version
+-
+- -- OVN team <dev@openvswitch.org>  Wed, 08 Jul 2020 15:54:34 -0400
+-
+-OVN (20.06.1-1) unstable; urgency=low
+-
+-    * New upstream version
++   * New upstream version
+ 
+- -- OVN team <dev@openvswitch.org>  Wed, 08 Jul 2020 15:54:34 -0400
++ -- OVN team <dev@openvswitch.org>  Tue, 26 May 2020 01:10:35 +0530
+ 
+-OVN (20.06.0-1) unstable; urgency=low
++ovn (20.06.0-1) unstable; urgency=low
+ 
+     * New upstream version
+ 
+- -- OVN team <dev@openvswitch.org>  Mon, 8 Jun 2020 08:09:27 -0500
++ -- OVN team <dev@openvswitch.org>  Tue, 26 May 2020 01:10:35 -0400
+ 
+-OVN (20.03.0-1) unstable; urgency=low
++ovn (20.03.0-1) unstable; urgency=low
+ 
+    * New upstream version
+ 
+diff --git a/debian/control b/debian/control
+index bf704abcc1..7b11469f6c 100644
+--- a/debian/control
++++ b/debian/control
+@@ -1,125 +1,23 @@
+-Source: openvswitch
++Source: ovn
+ Section: net
+ Priority: extra
+-Maintainer: Open vSwitch developers <dev@openvswitch.org>
++Maintainer: Open Virtual Network developers <dev@ovn.org>
+ Uploaders: Simon Horman <horms@debian.org>
+-Build-Depends: graphviz,
+-               autoconf (>= 2.64),
++Build-Depends: autoconf (>= 2.63),
+                automake (>= 1.10) | automake1.10,
+                bzip2,
+                debhelper (>= 8),
+                dh-autoreconf,
++               python3,
+                libssl-dev,
+                libtool,
+-               openssl,
+-               procps,
+-               python-all (>= 2.7),
+-               python-twisted-conch,
+-               python-zopeinterface,
+                libunbound-dev
+ Standards-Version: 3.9.3
+-Homepage: http://openvswitch.org/
+-
+-Package: openvswitch-datapath-source
+-Architecture: all
+-Depends: bzip2, debhelper (>= 5.0.37), module-assistant, ${misc:Depends}
+-Suggests: openvswitch-switch
+-Description: Open vSwitch datapath module source - module-assistant version
+- Open vSwitch is a production quality, multilayer, software-based,
+- Ethernet virtual switch. It is designed to enable massive network
+- automation through programmatic extension, while still supporting
+- standard management interfaces and protocols (e.g. NetFlow, IPFIX,
+- sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In addition, it is designed
+- to support distribution across multiple physical servers similar to
+- VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.
+- .
+- This package provides the Open vSwitch datapath module source code
+- that is needed by openvswitch-switch.  The kernel module can be built
+- from it using module-assistant or make-kpkg.  README.Debian in this
+- package provides further instructions.
+-
+-Package: openvswitch-datapath-dkms
+-Architecture: all
+-Depends: dkms (>= 1.95), libc6-dev, libelf-dev, make, ${misc:Depends}, ${python:Depends}
+-Description: Open vSwitch datapath module source - DKMS version
+- Open vSwitch is a production quality, multilayer, software-based,
+- Ethernet virtual switch. It is designed to enable massive network
+- automation through programmatic extension, while still supporting
+- standard management interfaces and protocols (e.g. NetFlow, IPFIX,
+- sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In addition, it is designed
+- to support distribution across multiple physical servers similar to
+- VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.
+- .
+- This package provides the Open vSwitch datapath module source code
+- that is needed by openvswitch-switch.  DKMS can built the kernel
+- module from it.
+-
+-Package: openvswitch-common
+-Architecture: linux-any
+-Multi-Arch: foreign
+-Depends: python (>= 2.7),
+-         libopenvswitch (= ${binary:Version}),
+-         ${misc:Depends},
+-         ${shlibs:Depends}
+-Suggests: ethtool
+-Replaces: openvswitch-switch (<< 2.5.90)
+-Breaks: openvswitch-switch (<< 2.5.90)
+-Description: Open vSwitch common components
+- Open vSwitch is a production quality, multilayer, software-based,
+- Ethernet virtual switch. It is designed to enable massive network
+- automation through programmatic extension, while still supporting
+- standard management interfaces and protocols (e.g. NetFlow, IPFIX,
+- sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In addition, it is designed
+- to support distribution across multiple physical servers similar to
+- VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.
+- .
+- openvswitch-common provides components required by both openvswitch-switch
+- and openvswitch-testcontroller.
+-
+-Package: libopenvswitch
+-Architecture: linux-any
+-Multi-Arch: same
+-Depends: openssl,
+-         ${misc:Depends},
+-         ${shlibs:Depends}
+-Description: Open vSwitch common components
+- Open vSwitch is a production quality, multilayer, software-based,
+- Ethernet virtual switch. It is designed to enable massive network
+- automation through programmatic extension, while still supporting
+- standard management interfaces and protocols (e.g. NetFlow, IPFIX,
+- sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In addition, it is designed
+- to support distribution across multiple physical servers similar to
+- VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.
+- .
+- libopenvswitch provides runtime libraries for use by openvswitch binaries
+-
+-Package: openvswitch-switch
+-Architecture: linux-any
+-Suggests: openvswitch-datapath-module
+-Depends: kmod | module-init-tools,
+-         netbase,
+-         openvswitch-common (= ${binary:Version}),
+-         procps,
+-         python-argparse,
+-         uuid-runtime,
+-         ${misc:Depends},
+-         ${python:Depends},
+-         ${shlibs:Depends}
+-Description: Open vSwitch switch implementations
+- Open vSwitch is a production quality, multilayer, software-based,
+- Ethernet virtual switch. It is designed to enable massive network
+- automation through programmatic extension, while still supporting
+- standard management interfaces and protocols (e.g. NetFlow, IPFIX,
+- sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In addition, it is designed
+- to support distribution across multiple physical servers similar to
+- VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.
+- .
+- openvswitch-switch provides the userspace components and utilities for
+- the Open vSwitch kernel-based switch.
++Homepage: http://ovn.org/
+ 
+ Package: ovn-common
+ Architecture: linux-any
+-Depends: openvswitch-common (= ${binary:Version}),
++Depends: ovn-common (= ${binary:Version}),
+          ${misc:Depends},
+          ${shlibs:Depends}
+ Description: OVN common components
+@@ -181,7 +79,7 @@ Package: ovn-docker
+ Architecture: linux-any
+ Depends: openvswitch-switch (= ${binary:Version}),
+          openvswitch-common (= ${binary:Version}),
+-         python (>= 2.7),
++         python (>= 3.5),
+          python-openvswitch (= ${source:Version}),
+          ovn-common (= ${binary:Version}),
+          ${misc:Depends},
+@@ -194,150 +92,3 @@ Description: OVN Docker drivers
+  overlays and security groups.
+  .
+  ovn-docker provides the docker drivers for OVN.
+-
+-Package: openvswitch-pki
+-Architecture: all
+-Depends: openvswitch-common (<< ${source:Version}.1~),
+-         openvswitch-common (>= ${source:Version}),
+-         ${misc:Depends}
+-Description: Open vSwitch public key infrastructure dependency package
+- Open vSwitch is a production quality, multilayer, software-based,
+- Ethernet virtual switch. It is designed to enable massive network
+- automation through programmatic extension, while still supporting
+- standard management interfaces and protocols (e.g. NetFlow, IPFIX,
+- sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In addition, it is designed
+- to support distribution across multiple physical servers similar to
+- VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.
+- .
+- openvswitch-pki provides PKI (public key infrastructure) support for
+- Open vSwitch switches and controllers, reducing the risk of
+- man-in-the-middle attacks on the Open vSwitch network infrastructure.
+-
+-Package: openvswitch-testcontroller
+-Architecture: linux-any
+-Depends: openvswitch-common (= ${binary:Version}),
+-         openvswitch-pki (= ${source:Version}),
+-         ${misc:Depends},
+-         ${shlibs:Depends}
+-Description: Simple controller for testing OpenFlow setups
+- This controller enables OpenFlow switches that connect to it to act
+- as MAC-learning Ethernet switches.  It can be used for initial
+- testing of OpenFlow networks.  It is not a necessary or desirable
+- part of a production OpenFlow deployment.
+-
+-Package: openvswitch-dbg
+-Section: debug
+-Architecture: linux-any
+-Depends: openvswitch-common (= ${binary:Version}),
+-         openvswitch-switch (= ${binary:Version}),
+-         ${misc:Depends},
+-         ${shlibs:Depends}
+-Conflicts: openvswitch-testcontroller (<< ${binary:Version}),
+-           openvswitch-testcontroller (>> ${binary:Version})
+-Description: Debug symbols for Open vSwitch packages
+- Open vSwitch is a production quality, multilayer, software-based,
+- Ethernet virtual switch. It is designed to enable massive network
+- automation through programmatic extension, while still supporting
+- standard management interfaces and protocols (e.g. NetFlow, IPFIX,
+- sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In addition, it is designed
+- to support distribution across multiple physical servers similar to
+- VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.
+- .
+- This package contains the debug symbols for all the other openvswitch-*
+- packages.  Install it to debug one of them or to examine a core dump
+- produced by one of them.
+-
+-Package: python-openvswitch
+-Architecture: all
+-Section: python
+-Depends: ${misc:Depends}, ${python:Depends}
+-Description: Python bindings for Open vSwitch
+- Open vSwitch is a production quality, multilayer, software-based,
+- Ethernet virtual switch. It is designed to enable massive network
+- automation through programmatic extension, while still supporting
+- standard management interfaces and protocols (e.g. NetFlow, IPFIX,
+- sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In addition, it is designed
+- to support distribution across multiple physical servers similar to
+- VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.
+- .
+- This package contains the full Python bindings for Open vSwitch database.
+-
+-Package: openvswitch-test
+-Architecture: all
+-Depends: python (>= 2.7) | python-argparse,
+-         python-twisted-web,
+-         ${misc:Depends},
+-         ${python:Depends}
+-Description: Open vSwitch test package
+- Open vSwitch is a production quality, multilayer, software-based,
+- Ethernet virtual switch. It is designed to enable massive network
+- automation through programmatic extension, while still supporting
+- standard management interfaces and protocols (e.g. NetFlow, IPFIX,
+- sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In addition, it is designed
+- to support distribution across multiple physical servers similar to
+- VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.
+- .
+- This package contains utilities that are useful to diagnose
+- performance and connectivity issues in Open vSwitch setup.
+-
+-Package: openvswitch-vtep
+-Architecture: linux-any
+-Depends: openvswitch-common (>= ${binary:Version}),
+-         openvswitch-switch (>= ${binary:Version}),
+-         python,
+-         python-openvswitch (>= ${source:Version}),
+-         ${misc:Depends},
+-         ${shlibs:Depends}
+-Description: Open vSwitch VTEP utilities
+- Open vSwitch is a production quality, multilayer, software-based, Ethernet
+- virtual switch. It is designed to enable massive network automation through
+- programmatic extension, while still supporting standard management interfaces
+- and protocols (e.g. NetFlow, sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In
+- addition, it is designed to support distribution across multiple physical
+- servers similar to VMware's vNetwork distributed vswitch or Cisco's Nexus
+- 1000V.
+- .
+- This package provides utilities that are useful to interact with a
+- VTEP-configured database and a VTEP emulator.
+-
+-Package: libopenvswitch-dev
+-Architecture: linux-any
+-Multi-Arch: same
+-Depends:
+- libopenvswitch (>= ${binary:Version}),
+- libssl-dev,
+- libunbound-dev,
+- ${misc:Depends}
+-Conflicts: openvswitch-dev
+-Replaces: openvswitch-dev
+-Description: Open vSwitch development package
+- Open vSwitch is a production quality, multilayer, software-based, Ethernet
+- virtual switch. It is designed to enable massive network automation through
+- programmatic extension, while still supporting standard management interfaces
+- and protocols (e.g. NetFlow, sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In
+- addition, it is designed to support distribution across multiple physical
+- servers similar to VMware's vNetwork distributed vswitch or Cisco's Nexus
+- 1000V.
+- .
+- This package provides openvswitch headers and libopenvswitch for developers.
+-
+-Package: openvswitch-ipsec
+-Architecture: linux-any
+-Depends: iproute2,
+-         openvswitch-common (= ${binary:Version}),
+-         openvswitch-switch (= ${binary:Version}),
+-         python,
+-         python-openvswitch (= ${source:Version}),
+-         strongswan,
+-         ${misc:Depends},
+-         ${shlibs:Depends}
+-Description: Open vSwitch IPsec tunneling support
+- Open vSwitch is a production quality, multilayer, software-based,
+- Ethernet virtual switch. It is designed to enable massive network
+- automation through programmatic extension, while still supporting
+- standard management interfaces and protocols (e.g. NetFlow, IPFIX,
+- sFlow, SPAN, RSPAN, CLI, LACP, 802.1ag). In addition, it is designed
+- to support distribution across multiple physical servers similar to
+- VMware's vNetwork distributed vswitch or Cisco's Nexus 1000V.
+- .
+- This package provides IPsec tunneling support for OVS tunnels.
+diff --git a/debian/control.modules.in b/debian/control.modules.in
+deleted file mode 100644
+index af44a585b6..0000000000
+--- a/debian/control.modules.in
++++ /dev/null
+@@ -1,20 +0,0 @@
+-Source: openvswitch
+-Section: net
+-Priority: extra
+-Maintainer: Open vSwitch developers <dev@openvswitch.org>
+-Build-Depends: debhelper (>= 5.0.37)
+-Standards-Version: 3.7.3
+-
+-Package: openvswitch-datapath-module-_KVERS_
+-Architecture: any
+-Recommends: kernel-image-_KVERS_, openvswitch-switch
+-Provides: openvswitch-datapath-module
+-Description: Open vSwitch Linux datapath kernel module
+- This package contains the Open vSwitch loadable datapath kernel modules for
+- the kernel-image-_KVERS_ package.
+- .
+- If you compiled a custom kernel, you will most likely need to compile
+- a custom version of this module as well.  The
+- openvswitch-datapath-source package has been provided for this
+- purpose.  Refer to README.Debian provided in that package for further
+- instructions.
+diff --git a/debian/dkms.conf.in b/debian/dkms.conf.in
+deleted file mode 100644
+index 2c90b4defe..0000000000
+--- a/debian/dkms.conf.in
++++ /dev/null
+@@ -1,11 +0,0 @@
+-MODULES=( __MODULES__ )
+-
+-PACKAGE_NAME="openvswitch"
+-PACKAGE_VERSION="__VERSION__"
+-MAKE="./configure --with-linux='${kernel_source_dir}' && make -C datapath/linux"
+-for __idx in ${!MODULES[@]}; do
+-    BUILT_MODULE_NAME[__idx]=${MODULES[__idx]}
+-    BUILT_MODULE_LOCATION[__idx]=datapath/linux/
+-    DEST_MODULE_LOCATION[__idx]=/kernel/drivers/net/openvswitch/
+-done
+-AUTOINSTALL=yes
+diff --git a/debian/ifupdown.sh b/debian/ifupdown.sh
+deleted file mode 100755
+index 9a7772d032..0000000000
+--- a/debian/ifupdown.sh
++++ /dev/null
+@@ -1,107 +0,0 @@
+-#! /bin/sh
+-
+-# Copyright (c) 2012, 2013 Nicira, Inc.
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at:
+-#
+-#     http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-
+-# Have a look at /usr/share/doc/openvswitch-switch/README.Debian
+-# for more information about configuring the /etc/network/interfaces.
+-
+-if [ -z "${IF_OVS_TYPE}" ]; then
+-    exit 0
+-fi
+-
+-ovs_vsctl() {
+-    ovs-vsctl --timeout=5 "$@"
+-}
+-
+-if (ovs_vsctl --version) > /dev/null 2>&1; then :; else
+-    exit 0
+-fi
+-
+-if /etc/init.d/openvswitch-switch status > /dev/null 2>&1; then :; else
+-    /etc/init.d/openvswitch-switch start
+-fi
+-
+-if [ "${MODE}" = "start" ]; then
+-    eval OVS_EXTRA=\"${IF_OVS_EXTRA}\"
+-
+-    case "${IF_OVS_TYPE}" in
+-        OVSBridge)
+-                ovs_vsctl -- --may-exist add-br "${IFACE}" ${IF_OVS_OPTIONS}\
+-                         ${OVS_EXTRA+-- $OVS_EXTRA}
+-
+-                if [ ! -z "${IF_OVS_PORTS}" ]; then
+-                    ifup --allow="${IFACE}" ${IF_OVS_PORTS}
+-                fi
+-                ;;
+-        OVSPort)
+-                ovs_vsctl -- --may-exist add-port "${IF_OVS_BRIDGE}"\
+-                    "${IFACE}" ${IF_OVS_OPTIONS} \
+-                    ${OVS_EXTRA+-- $OVS_EXTRA}
+-
+-                ip link set "${IFACE}" up
+-                ;;
+-        OVSIntPort)
+-                ovs_vsctl -- --may-exist add-port "${IF_OVS_BRIDGE}"\
+-                    "${IFACE}" ${IF_OVS_OPTIONS} -- set Interface "${IFACE}"\
+-                    type=internal ${OVS_EXTRA+-- $OVS_EXTRA}
+-
+-                ip link set "${IFACE}" up
+-                ;;
+-        OVSBond)
+-                ovs_vsctl -- --fake-iface --may-exist add-bond "${IF_OVS_BRIDGE}"\
+-                    "${IFACE}" ${IF_OVS_BONDS} ${IF_OVS_OPTIONS} \
+-                    ${OVS_EXTRA+-- $OVS_EXTRA}
+-
+-                ip link set "${IFACE}" up
+-                for slave in ${IF_OVS_BONDS}
+-                do
+-                    ip link set "${slave}" up
+-                done
+-                ;;
+-        OVSPatchPort)
+-                ovs_vsctl -- --may-exist add-port "${IF_OVS_BRIDGE}"\
+-                    "${IFACE}" ${IF_OVS_OPTIONS} -- set Interface "${IFACE}" \
+-                    type=patch options:peer="${IF_OVS_PATCH_PEER}" \
+-                    ${OVS_EXTRA+-- $OVS_EXTRA}
+-                ;;
+-        OVSTunnel)
+-                ovs_vsctl -- --may-exist add-port "${IF_OVS_BRIDGE}"\
+-                    "${IFACE}" ${IF_OVS_OPTIONS} -- set Interface "${IFACE}" \
+-                    type=${IF_OVS_TUNNEL_TYPE} ${IF_OVS_TUNNEL_OPTIONS} \
+-                    ${OVS_EXTRA+-- $OVS_EXTRA}
+-                ;;
+-        *)
+-                exit 0
+-                ;;
+-    esac
+-elif [ "${MODE}" = "stop" ]; then
+-    case "${IF_OVS_TYPE}" in
+-        OVSBridge)
+-                if [ ! -z "${IF_OVS_PORTS}" ]; then
+-                    ifdown --allow="${IFACE}" ${IF_OVS_PORTS}
+-                fi
+-
+-                ovs_vsctl -- --if-exists del-br "${IFACE}"
+-                ;;
+-        OVSPort|OVSIntPort|OVSBond|OVSPatchPort|OVSTunnel)
+-                ovs_vsctl -- --if-exists del-port "${IF_OVS_BRIDGE}" "${IFACE}"
+-                ;;
+-        *)
+-                exit 0
+-                ;;
+-    esac
+-fi
+-
+-exit 0
+diff --git a/debian/libopenvswitch-dev.install b/debian/libopenvswitch-dev.install
+deleted file mode 100644
+index bda5a2ca3b..0000000000
+--- a/debian/libopenvswitch-dev.install
++++ /dev/null
+@@ -1,19 +0,0 @@
+-usr/lib/*/libopenvswitch*.so
+-usr/lib/*/libofproto*.so
+-usr/lib/*/libovsdb*.so
+-usr/lib/*/libsflow*.so
+-usr/lib/*/libvtep*.so
+-usr/lib/*/libopenvswitch*.a
+-usr/lib/*/libofproto*.a
+-usr/lib/*/libovsdb*.a
+-usr/lib/*/libsflow*.a
+-usr/lib/*/libvtep*.a
+-usr/lib/*/pkgconfig
+-include/*.h usr/include/openvswitch
+-include/openflow/*.h usr/include/openvswitch/openflow
+-include/openvswitch/*.h usr/include/openvswitch/openvswitch
+-include/sparse/*.h usr/include/openvswitch/sparse
+-include/sparse/arpa/*.h usr/include/openvswitch/sparse/arpa
+-include/sparse/netinet/*.h usr/include/openvswitch/sparse/netinet
+-include/sparse/sys/*.h usr/include/openvswitch/sparse/sys
+-lib/*.h usr/include/openvswitch/lib
+diff --git a/debian/libopenvswitch.install b/debian/libopenvswitch.install
+deleted file mode 100644
+index ce9dc401aa..0000000000
+--- a/debian/libopenvswitch.install
++++ /dev/null
+@@ -1,5 +0,0 @@
+-usr/lib/*/libopenvswitch*.so.*
+-usr/lib/*/libofproto*.so.*
+-usr/lib/*/libovsdb*.so.*
+-usr/lib/*/libsflow*.so.*
+-usr/lib/*/libvtep*.so.*
+diff --git a/debian/openvswitch-common.dirs b/debian/openvswitch-common.dirs
+deleted file mode 100644
+index be9ed2f032..0000000000
+--- a/debian/openvswitch-common.dirs
++++ /dev/null
+@@ -1 +0,0 @@
+-var/log/openvswitch
+diff --git a/debian/openvswitch-common.docs b/debian/openvswitch-common.docs
+deleted file mode 100644
+index e69de29bb2..0000000000
+diff --git a/debian/openvswitch-common.install b/debian/openvswitch-common.install
+deleted file mode 100644
+index 3264ea53cc..0000000000
+--- a/debian/openvswitch-common.install
++++ /dev/null
+@@ -1,11 +0,0 @@
+-etc/bash_completion.d/ovs-appctl-bashcomp.bash
+-usr/bin/ovs-appctl
+-usr/bin/ovs-docker
+-usr/bin/ovs-ofctl
+-usr/bin/ovs-parse-backtrace
+-usr/bin/ovs-pki
+-usr/bin/ovsdb-client
+-usr/sbin/ovs-bugtool
+-usr/share/openvswitch/bugtool-plugins
+-usr/share/openvswitch/scripts/ovs-bugtool-*
+-usr/share/openvswitch/scripts/ovs-lib
+diff --git a/debian/openvswitch-common.manpages b/debian/openvswitch-common.manpages
+deleted file mode 100644
+index 9ac6a1dd6d..0000000000
+--- a/debian/openvswitch-common.manpages
++++ /dev/null
+@@ -1,7 +0,0 @@
+-ovsdb/ovsdb-client.1
+-ovsdb/ovsdb-tool.1
+-utilities/bugtool/ovs-bugtool.8
+-utilities/ovs-appctl.8
+-utilities/ovs-ofctl.8
+-utilities/ovs-parse-backtrace.8
+-utilities/ovs-pki.8
+diff --git a/debian/openvswitch-datapath-dkms.postinst b/debian/openvswitch-datapath-dkms.postinst
+deleted file mode 100644
+index 4903119561..0000000000
+--- a/debian/openvswitch-datapath-dkms.postinst
++++ /dev/null
+@@ -1,21 +0,0 @@
+-#!/bin/sh
+-
+-set -e
+-
+-package=openvswitch-datapath-dkms
+-name=openvswitch
+-
+-version=`dpkg-query -W -f='${Version}' "$package" \
+-        |rev|cut -d- -f2-|rev|cut -d':' -f2|tr -d "\n"`
+-
+-isadded=`dkms status -m "$name" -v "$version"`
+-
+-if [ "x${isadded}" = "x" ] ; then
+-        dkms add -m "$name" -v "$version"
+-fi
+-
+-if [ "$1" = 'configure' ] ; then
+-        dkms build -m "$name" -v "$version" && dkms install -m "$name" -v "$version" || true
+-fi
+-
+-#DEBHELPER#
+diff --git a/debian/openvswitch-datapath-dkms.prerm b/debian/openvswitch-datapath-dkms.prerm
+deleted file mode 100644
+index 5c8ad3120f..0000000000
+--- a/debian/openvswitch-datapath-dkms.prerm
++++ /dev/null
+@@ -1,15 +0,0 @@
+-#!/bin/sh
+-
+-set -e
+-
+-package=openvswitch-datapath-dkms
+-name=openvswitch
+-
+-version=`dpkg-query -W -f='${Version}' "$package" \
+-        |rev|cut -d- -f2-|rev|cut -d':' -f2|tr -d "\n"`
+-
+-dkms remove -m "$name" -v "$version" --all || true
+-
+-#DEBHELPER#
+-
+-exit 0
+diff --git a/debian/openvswitch-datapath-module-_KVERS_.postinst.modules.in b/debian/openvswitch-datapath-module-_KVERS_.postinst.modules.in
+deleted file mode 100755
+index 2241acfc52..0000000000
+--- a/debian/openvswitch-datapath-module-_KVERS_.postinst.modules.in
++++ /dev/null
+@@ -1,27 +0,0 @@
+-#!/bin/sh
+-# postinst script for #PACKAGE#
+-#
+-# see: dh_installdeb(1)
+-
+-set -e
+-
+-#DEBHELPER#
+-
+-# If the kernel module is already loaded, we have nothing to do here.
+-# A force-reload-kmod should be run manually to use the new kernel module.
+-if [ -e /sys/module/openvswitch ]; then
+-    exit 0
+-fi
+-
+-# If the kernel module is not loaded, then it is likely because none
+-# was installed before and therefore Open vSwitch couldn't be started.
+-# Try to start it now.
+-#
+-# (Ideally we'd only want to do this if this package corresponds to the
+-# running kernel, but I don't know a reliable way to check.)
+-INIT=/etc/init.d/openvswitch-switch
+-if test -x $INIT; then
+-    $INIT start || true
+-fi
+-
+-exit 0
+diff --git a/debian/openvswitch-datapath-source.README.Debian b/debian/openvswitch-datapath-source.README.Debian
+deleted file mode 100644
+index c068bbb36e..0000000000
+--- a/debian/openvswitch-datapath-source.README.Debian
++++ /dev/null
+@@ -1,31 +0,0 @@
+-Open vSwitch for Debian
+-----------------------
+-
+-* How do I build this module the Debian way?
+-
+-    - Building with module-assistant:
+-
+-        $ module-assistant auto-install openvswitch-datapath
+-      or
+-        $ m-a a-i openvswitch-datapath
+-
+-      If kernel source or headers are in a non-standard directory, add
+-      the option -k /path/to/kernel/source with the correct path.
+-
+-    - Building with make-kpkg
+-
+-        $ cd /usr/src/
+-        $ tar jxvf openvswitch.tar.bz2
+-        $ cd /usr/src/kernel-source-2.6.26
+-        $ make-kpkg --added-modules=openvswitch modules
+-
+-    - Building without make-kpkg
+-
+-        $ cd /usr/src/
+-        $ tar jxvf openvswitch.tar.bz2
+-        $ cd modules/openvswitch
+-        $ fakeroot debian/rules kdist_image
+-
+-      If you run this as root, fakeroot is not needed.
+-
+- -- Ben Pfaff <blp@nicira.com>, Wed, 22 Jun 2011 09:51:28 -0700
+diff --git a/debian/openvswitch-datapath-source.copyright b/debian/openvswitch-datapath-source.copyright
+deleted file mode 100644
+index 8151de165b..0000000000
+--- a/debian/openvswitch-datapath-source.copyright
++++ /dev/null
+@@ -1,15 +0,0 @@
+-Upstream Authors: 
+-
+-    Nicira, Inc.
+-
+-Copyright: 
+-
+-    Copyright (C) 2008 Nicira, Inc.
+-
+-License:
+-
+-    Files in the datapath/ and its sub-directories are covered under the GNU
+-    General Public License Version 2.
+-
+-    On Debian systems, the complete text of the GNU General
+-    Public License can be found in `/usr/share/common-licenses/GPL'.
+diff --git a/debian/openvswitch-datapath-source.dirs b/debian/openvswitch-datapath-source.dirs
+deleted file mode 100644
+index e5a7d6b07c..0000000000
+--- a/debian/openvswitch-datapath-source.dirs
++++ /dev/null
+@@ -1 +0,0 @@
+-usr/src/modules/openvswitch-datapath/debian
+diff --git a/debian/openvswitch-datapath-source.install b/debian/openvswitch-datapath-source.install
+deleted file mode 100644
+index 58033be302..0000000000
+--- a/debian/openvswitch-datapath-source.install
++++ /dev/null
+@@ -1,5 +0,0 @@
+-debian/*.modules.in usr/src/modules/openvswitch-datapath/debian
+-debian/changelog usr/src/modules/openvswitch-datapath/debian
+-debian/compat usr/src/modules/openvswitch-datapath/debian
+-debian/control usr/src/modules/openvswitch-datapath/debian
+-openvswitch.tar.gz usr/src/modules/openvswitch-datapath
+diff --git a/debian/openvswitch-ipsec.dirs b/debian/openvswitch-ipsec.dirs
+deleted file mode 100644
+index fca44aa7b4..0000000000
+--- a/debian/openvswitch-ipsec.dirs
++++ /dev/null
+@@ -1 +0,0 @@
+-usr/share/openvswitch/scripts
+\ No newline at end of file
+diff --git a/debian/openvswitch-ipsec.init b/debian/openvswitch-ipsec.init
+deleted file mode 100644
+index aa68384547..0000000000
+--- a/debian/openvswitch-ipsec.init
++++ /dev/null
+@@ -1,181 +0,0 @@
+-#!/bin/sh
+-#
+-# Copyright (c) 2007, 2009 Javier Fernandez-Sanguino <jfs@debian.org>
+-#
+-# This is free software; you may redistribute it and/or modify
+-# it under the terms of the GNU General Public License as
+-# published by the Free Software Foundation; either version 2,
+-# or (at your option) any later version.
+-#
+-# This is distributed in the hope that it will be useful, but
+-# WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License with
+-# the Debian operating system, in /usr/share/common-licenses/GPL;  if
+-# not, write to the Free Software Foundation, Inc., 59 Temple Place,
+-# Suite 330, Boston, MA 02111-1307 USA
+-#
+-### BEGIN INIT INFO
+-# Provides:          openvswitch-ipsec
+-# Required-Start:    $network $local_fs $remote_fs openvswitch-switch
+-# Required-Stop:     $remote_fs
+-# Default-Start:     2 3 4 5
+-# Default-Stop:      0 1 6
+-# Short-Description: Open vSwitch GRE-over-IPsec daemon
+-# Description:       The ovs-monitor-ipsec script provides support for
+-#                    encrypting GRE tunnels with IPsec.
+-### END INIT INFO
+-
+-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+-
+-DAEMON=/usr/share/openvswitch/scripts/ovs-monitor-ipsec # Daemon's location
+-NAME=ovs-monitor-ipsec          # Introduce the short server's name here
+-LOGDIR=/var/log/openvswitch     # Log directory to use
+-DATADIR=/usr/share/openvswitch
+-
+-PIDFILE=/var/run/openvswitch/$NAME.pid
+-
+-test -x $DAEMON || exit 0
+-
+-. /lib/lsb/init-functions
+-
+-DODTIME=10              # Time to wait for the server to die, in seconds
+-                        # If this value is set too low you might not
+-                        # let some servers to die gracefully and
+-                        # 'restart' will not work
+-
+-set -e
+-
+-running_pid() {
+-# Check if a given process pid's cmdline matches a given name
+-    pid=$1
+-    name=$2
+-    [ -z "$pid" ] && return 1
+-    [ ! -d /proc/$pid ] &&  return 1
+-    cmd=`cat /proc/$pid/cmdline | tr "\000" " "|cut -d " " -f 2`
+-    # Is this the expected server
+-    [ "$cmd" != "$name" ] &&  return 1
+-    return 0
+-}
+-
+-running() {
+-# Check if the process is running looking at /proc
+-# (works for all users)
+-
+-    # No pidfile, probably no daemon present
+-    [ ! -f "$PIDFILE" ] && return 1
+-    pid=`cat $PIDFILE`
+-    running_pid $pid $DAEMON || return 1
+-    return 0
+-}
+-
+-start_server() {
+-    ${DATADIR}/scripts/ovs-ctl --ike-daemon=strongswan start-ovs-ipsec
+-    return 0
+-}
+-
+-stop_server() {
+-    ${DATADIR}/scripts/ovs-ctl stop-ovs-ipsec
+-    return 0
+-}
+-
+-force_stop() {
+-# Force the process to die killing it manually
+-    [ ! -e "$PIDFILE" ] && return
+-    if running ; then
+-        kill -15 $pid
+-        # Is it really dead?
+-        sleep "$DODTIME"
+-        if running ; then
+-            kill -9 $pid
+-            sleep "$DODTIME"
+-            if running ; then
+-                echo "Cannot kill $NAME (pid=$pid)!"
+-                exit 1
+-            fi
+-        fi
+-    fi
+-    rm -f $PIDFILE
+-}
+-
+-
+-case "$1" in
+-  start)
+-        log_daemon_msg "Starting $NAME"
+-        # Check if it's running first
+-        if running ;  then
+-            log_progress_msg "apparently already running"
+-            log_end_msg 0
+-            exit 0
+-        fi
+-        if start_server && running ;  then
+-            # It's ok, the server started and is running
+-            log_end_msg 0
+-        else
+-            # Either we could not start it or it is not running
+-            # after we did
+-            # NOTE: Some servers might die some time after they start,
+-            # this code does not try to detect this and might give
+-            # a false positive (use 'status' for that)
+-            log_end_msg 1
+-        fi
+-        ;;
+-  stop)
+-        log_daemon_msg "Stopping $NAME"
+-        if running ; then
+-            # Only stop the server if we see it running
+-            stop_server
+-            log_end_msg $?
+-        else
+-            # If it's not running don't do anything
+-            log_progress_msg "apparently not running"
+-            log_end_msg 0
+-            exit 0
+-        fi
+-        ;;
+-  force-stop)
+-        # First try to stop gracefully the program
+-        $0 stop
+-        if running; then
+-            # If it's still running try to kill it more forcefully
+-            log_daemon_msg "Stopping (force) $NAME"
+-            force_stop
+-            log_end_msg $?
+-        fi
+-        ;;
+-  restart|force-reload)
+-        log_daemon_msg "Restarting $NAME"
+-        stop_server
+-        # Wait some sensible amount, some server need this
+-        [ -n "$DODTIME" ] && sleep $DODTIME
+-        start_server
+-        running
+-        log_end_msg $?
+-        ;;
+-  status)
+-        log_daemon_msg "Checking status of $NAME"
+-        if running ;  then
+-            log_progress_msg "running"
+-            log_end_msg 0
+-        else
+-            log_progress_msg "apparently not running"
+-            log_end_msg 1
+-            exit 1
+-        fi
+-        ;;
+-  # Use this if the daemon cannot reload
+-  reload)
+-        log_warning_msg "Reloading $NAME daemon: not implemented, as the"
+-        log_warning_msg "deamon cannot re-read the config file (use restart)."
+-        ;;
+-  *)
+-        N=/etc/init.d/openvswitch-ipsec
+-        echo "Usage: $N {start|stop|force-stop|restart|force-reload|status}" \
+-             >&2
+-        exit 1
+-        ;;
+-esac
+-
+-exit 0
+diff --git a/debian/openvswitch-ipsec.install b/debian/openvswitch-ipsec.install
+deleted file mode 100644
+index 8fe665cb3b..0000000000
+--- a/debian/openvswitch-ipsec.install
++++ /dev/null
+@@ -1 +0,0 @@
+-ipsec/ovs-monitor-ipsec usr/share/openvswitch/scripts
+diff --git a/debian/openvswitch-pki.dirs b/debian/openvswitch-pki.dirs
+deleted file mode 100644
+index 84f7b3704d..0000000000
+--- a/debian/openvswitch-pki.dirs
++++ /dev/null
+@@ -1 +0,0 @@
+-/var/lib/openvswitch
+diff --git a/debian/openvswitch-pki.postinst b/debian/openvswitch-pki.postinst
+deleted file mode 100755
+index 75b4777360..0000000000
+--- a/debian/openvswitch-pki.postinst
++++ /dev/null
+@@ -1,41 +0,0 @@
+-#!/bin/sh
+-# postinst script for openvswitch-pki
+-#
+-# see: dh_installdeb(1)
+-
+-set -e
+-
+-# summary of how this script can be called:
+-#        * <postinst> `configure' <most-recently-configured-version>
+-#        * <old-postinst> `abort-upgrade' <new version>
+-#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+-#          <new-version>
+-#        * <postinst> `abort-remove'
+-#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+-#          <failed-install-package> <version> `removing'
+-#          <conflicting-package> <version>
+-# for details, see http://www.debian.org/doc/debian-policy/ or
+-# the debian-policy package
+-
+-case "$1" in
+-    configure)
+-        # Create certificate authorities.
+-        if test ! -e /var/lib/openvswitch/pki; then
+-            ovs-pki init
+-        fi
+-        ;;
+-
+-    abort-upgrade|abort-remove|abort-deconfigure)
+-        ;;
+-
+-    *)
+-        echo "postinst called with unknown argument \`$1'" >&2
+-        exit 1
+-        ;;
+-esac
+-
+-#DEBHELPER#
+-
+-exit 0
+-
+-
+diff --git a/debian/openvswitch-pki.postrm b/debian/openvswitch-pki.postrm
+deleted file mode 100755
+index 5db4d6be6b..0000000000
+--- a/debian/openvswitch-pki.postrm
++++ /dev/null
+@@ -1,43 +0,0 @@
+-#!/bin/sh
+-# postrm script for openvswitch-pki
+-#
+-# see: dh_installdeb(1)
+-
+-set -e
+-
+-# summary of how this script can be called:
+-#        * <postrm> `remove'
+-#        * <postrm> `purge'
+-#        * <old-postrm> `upgrade' <new-version>
+-#        * <new-postrm> `failed-upgrade' <old-version>
+-#        * <new-postrm> `abort-install'
+-#        * <new-postrm> `abort-install' <old-version>
+-#        * <new-postrm> `abort-upgrade' <old-version>
+-#        * <disappearer's-postrm> `disappear' <overwriter>
+-#          <overwriter-version>
+-# for details, see http://www.debian.org/doc/debian-policy/ or
+-# the debian-policy package
+-
+-
+-case "$1" in
+-    purge)
+-        rm -f /var/log/openvswitch/ovs-pki.log* || true
+-        ;;
+-
+-    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+-        ;;
+-
+-    *)
+-        echo "postrm called with unknown argument \`$1'" >&2
+-        exit 1
+-        ;;
+-esac
+-
+-# dh_installdeb will replace this with shell code automatically
+-# generated by other debhelper scripts.
+-
+-#DEBHELPER#
+-
+-exit 0
+-
+-
+diff --git a/debian/openvswitch-switch.README.Debian b/debian/openvswitch-switch.README.Debian
+deleted file mode 100644
+index f5a006221b..0000000000
+--- a/debian/openvswitch-switch.README.Debian
++++ /dev/null
+@@ -1,316 +0,0 @@
+-README.Debian for openvswitch-switch
+----------------------------------
+-
+-To use the Linux kernel-based switch implementation, you will need an
+-Open vSwitch kernel module.  There are multiple ways to obtain one.
+-In order of increasing manual effort, these are:
+-
+-       * Use a Linux kernel 3.3 or later, which has an integrated Open
+-         vSwitch kernel module.
+-
+-         The upstream Linux kernel module lacks a few features that
+-         are in the third-party module.  For details, please see the
+-         FAQ, "What features are not available in the Open vSwitch
+-         kernel datapath that ships as part of the upstream Linux
+-         kernel?".
+-
+-       * Install the "openvswitch-datapath-dkms" Debian package that
+-         you built earlier.  This should automatically build and
+-         install the Open vSwitch kernel module for your running
+-         kernel.
+-
+-         This option requires that you have a compiler and toolchain
+-         installed on the machine where you run Open vSwitch, which
+-         may be unacceptable in some production server environments.
+-
+-       * Install the "openvswitch-datapath-source" Debian package, use
+-         "module-assistant" to build a Debian package of the Open
+-         vSwitch kernel module for your kernel, and then install that
+-         Debian package.
+-
+-         You can install the kernel module Debian packages that you
+-         build this way on the same machine where you built it or on
+-         another machine or machines, which means that you don't
+-         necessarily have to have any build infrastructure on the
+-         machines where you use the kernel module.
+-
+-         /usr/share/doc/openvswitch-datapath-source/README.Debian has
+-         details on the build process.
+-
+-       * Build and install the kernel module by hand.
+-
+-
+-Debian network scripts (ifupdown) integration
+-------------------------------------------------
+-This package lets a user to optionally configure Open vSwitch bridges
+-and ports from /etc/network/interfaces. Please refer to the interfaces(5)
+-manpage for more details regarding /etc/network/interfaces.
+-
+-The stanzas that configure the OVS bridges should begin with "allow-ovs"
+-followed by name of the bridge. Here is an example.
+-allow-ovs br0
+-
+-The stanzas that configure the OVS ports should begin with
+-"allow-${bridge-name}" followed by name of the port. Here is an example.
+-allow-br0 eth0
+-
+-The following OVS specific "command" options are supported:
+-
+-    - ovs_type: This can either be OVSBridge, OVSPort, OVSIntPort, OVSBond,
+-      OVSPatchPort or OVSTunnel depending on whether you configure a bridge,
+-      port, an internal port, a bond, a patch port or a tunnel. This is a
+-      required option.
+-
+-    - ovs_ports: This option specifies all the ports that belong to a bridge.
+-
+-    - ovs_bridge: This options specifies a bridge to which a port belongs.
+-      This is a required option for a port.
+-
+-    - ovs_bonds: This option specifies the list of physical interfaces to be
+-      bonded together.
+-
+-    - ovs_patch_peer: For "OVSPatchPort" interfaces, this field specifies
+-      the patch's peer on the other bridge.
+-
+-    - ovs_tunnel_type: For "OVSTunnel" interfaces, the type of the tunnel.
+-      For example, "gre", "vxlan", etc.
+-
+-    - ovs_tunnel_options: For "OVSTunnel" interfaces, this field should be
+-      used to specify the tunnel options like remote_ip, key, etc.
+-
+-    - ovs_options: This option lets you add extra arguments to a ovs-vsctl
+-      command. See examples.
+-
+-    - ovs_extra: This option lets you run additional ovs-vsctl commands,
+-      separated by "--" (double dash). Variables can be part of the "ovs_extra"
+-      option. You can provide all the standard environmental variables
+-      described in the interfaces(5) man page. You can also pass shell
+-      commands.
+-
+-More implementation specific details can be seen in the examples.
+-
+-Examples:
+---------
+-ex 1: A standalone bridge.
+-
+-allow-ovs br0
+-iface br0 inet static
+-    address 192.168.1.1
+-    netmask 255.255.255.0
+-    ovs_type OVSBridge
+-
+-ex 2: A bridge with one port.
+-
+-allow-ovs br0
+-iface br0 inet dhcp
+-    ovs_type OVSBridge
+-    ovs_ports eth0
+-
+-allow-br0 eth0
+-iface eth0 inet manual
+-    ovs_bridge br0
+-    ovs_type OVSPort
+-
+-ex 3: A bridge with multiple physical ports.
+-
+-allow-ovs br0
+-iface br0 inet dhcp
+-    ovs_type OVSBridge
+-    ovs_ports eth0 eth1
+-
+-allow-br0 eth0
+-iface eth0 inet manual
+-    ovs_bridge br0
+-    ovs_type OVSPort
+-
+-allow-br0 eth1
+-iface eth1 inet manual
+-    ovs_bridge br0
+-    ovs_type OVSPort
+-
+-ex 4: A bridge with an OVS internal port.
+-
+-allow-ovs br1
+-iface br1 inet static
+-    address 192.168.1.1
+-    netmask 255.255.255.0
+-    ovs_type OVSBridge
+-    ovs_ports vlan100
+-
+-allow-br1 vlan100
+-iface vlan100 inet manual
+-    ovs_bridge br1
+-    ovs_type OVSIntPort
+-    ovs_options tag=100
+-    ovs_extra set interface ${IFACE} external-ids:iface-id=$(hostname -s)
+-
+-ex 5: Bonding.
+-
+-allow-ovs br2
+-iface br2 inet static
+-    address 192.170.1.1
+-    netmask 255.255.255.0
+-    ovs_type OVSBridge
+-    ovs_ports bond0
+-
+-allow-br2 bond0
+-iface bond0 inet manual
+-    ovs_bridge br2
+-    ovs_type OVSBond
+-    ovs_bonds eth2 eth3
+-    ovs_options bond_mode=balance-tcp lacp=active
+-
+-ex 6: Patch ports.
+-
+-allow-ovs br0
+-iface br0 inet manual
+-    ovs_type OVSBridge
+-    ovs_ports patch0
+-
+-allow-br0 patch0
+-iface patch0 inet manual
+-    ovs_bridge br0
+-    ovs_type OVSPatchPort
+-    ovs_patch_peer patch1
+-
+-allow-ovs br1
+-iface br1 inet manual
+-    ovs_type OVSBridge
+-    ovs_ports patch1
+-
+-allow-br1 patch1
+-iface patch1 inet manual
+-    ovs_bridge br1
+-    ovs_type OVSPatchPort
+-    ovs_patch_peer patch0
+-
+-ex 7: Tunnel.
+-
+-allow-ovs br1
+-iface br1 inet static
+-    address 192.168.1.1
+-    netmask 255.255.255.0
+-    ovs_type OVSBridge
+-    ovs_ports gre1
+-
+-allow-br1 gre1
+-iface gre1 inet manual
+-    ovs_bridge br1
+-    ovs_type OVSTunnel
+-    ovs_tunnel_type gre
+-    ovs_tunnel_options options:remote_ip=182.168.1.2 options:key=1
+-
+-ex 8: Create and destroy bridges.
+-
+-ifup --allow=ovs $list_of_bridges
+-ifdown --allow=ovs $list_of_bridges
+-
+-Open vSwitch integration with systemd-networkd
+------------------------------------------------
+-
+-There is no native integration of OVS with systemd-networkd. That is,
+-you cannot create OVS bridges, ports and bonds by simply writing configuration
+-files in /etc/systemd/network.  But, you can create OVS devices using ovs-vsctl
+-and then write configuration files to provide them IP addresses.
+-
+-As soon as a OVS device is visible, systemd-networkd will provide that device
+-an IP address.  Since OVS database is persistent across reboots, the OVS
+-devices will get re-created after a reboot as soon as OVS startup script is
+-invoked. And systemd-networkd will immediately assign the configuration defined
+-in /etc/systemd/network.
+-
+-Example:
+-
+-If you have a physical ethernet device "ens160" which has been configured with
+-DHCP, your systemd-networkd's .network config file will look something like
+-this:
+-
+-```
+-[Match]
+-Name=ens160
+-
+-[Network]
+-DHCP=ipv4
+-
+-[DHCP]
+-ClientIdentifier=mac
+-```
+-
+-Please note how the DHCP ClientIdentifier above has been configured with the
+-mac address.
+-
+-To create a OVS bridge "br-ens160" and add "ens160" as a port of that
+-bridge, you can change the .network configuration for "ens160" to look like:
+-
+-```
+-[Match]
+-Name=ens160
+-```
+-
+-Now create a new .network configuration file for "br-ens160". Something like:
+-
+-```
+-[Match]
+-Name=br-ens160
+-
+-[Network]
+-DHCP=ipv4
+-
+-[DHCP]
+-ClientIdentifier=mac
+-```
+-
+-Now, use ovs-vsctl to create br-ens160 and add ens160 as a port of it.  You
+-will also have to flush the IP address of ens160 and restart systemd-networkd
+-in the same line. It is important to let br-ens160 have the same mac address as
+-ens160 to get the same IP address to br-ens160 from the DHCP server.  In the
+-below command, "$mac_of_ens160" holds the mac address of ens160. For e.g:
+-
+-```
+-mac_of_ens160='"00:0c:29:77:27:7a"'
+-ovs-vsctl --may-exist add-br br-ens160 -- \
+-    --may-exist add-port br-ens160 ens160 -- \
+-    set interface br-ens160 mac="$mac_of_ens160"; ip addr flush dev ens160; \
+-    systemctl restart systemd-networkd
+-```
+-
+-br-ens160 should now have the same DHCP IP. It should also have the correct
+-DNS resolution servers configured.
+-
+-Notes on dependencies:
+----------------------
+-
+-openvswitch-switch depends on $network, $named $remote_fs and $syslog to start.
+-This creates some startup dependency issues.
+-
+-* Since openvswitch utilities are placed in /usr and /usr can be mounted
+-through NFS, openvswitch has to start after it.  But if a user uses openvswitch
+-for all his networking needs and hence to mount NFS, there will be a deadlock.
+-So, if /usr is mounted through NFS and openvswitch is used for all networking,
+-the administrator should figure out a way to mount NFS before starting OVS.
+-One way to do this is in initramfs.
+-
+-* Since openvswitch starts after $network, $remote_fs and $syslog, any startup
+-script that depends on openvswitch but starts before it, needs to be changed
+-to depend on openvswitch-switch too.
+-
+-* Ideally, an admin should not add openvswitch bridges in the 'auto'
+-section of the 'interfaces' file (i.e., if "br0" is a OVS bridge, you should
+-not have a line "auto br0"). This is because, when ifupdown starts
+-working on bridges listed in 'auto', openvswitch has not yet started.
+-
+-But, if the admin wants to go down this route and adds openvswitch bridges
+-in the 'auto' section, openvswitch-switch will forcefully be started when
+-ifupdown kicks in. In a case like this, the admin needs to make sure that /usr
+-has already been mounted and that a remote $syslog (if used) is ready to
+-receive openvswitch logs.
+-
+-* With systemd, adding openvswitch bridges in the 'auto' section of the
+-'interfaces' file can cause race conditions (i.e., if "br0" is a OVS bridge,
+-you should not have a line "auto br0").  Debian systems have added a
+-systemd ifup@.service file.  This file will call ifdown and ifup on interfaces
+-in "auto" section automatically when the interfaces disappear and appear
+-respectively.  This will cause race conditions if you delete and add the same
+-bridges using tools like "ovs-vsctl" or "ovs-dpctl".  This is also a problem
+-when you upgrade your openvswitch kernel module using commands like
+-'force-reload-kmod'.
+diff --git a/debian/openvswitch-switch.dirs b/debian/openvswitch-switch.dirs
+deleted file mode 100644
+index 0b1f281efa..0000000000
+--- a/debian/openvswitch-switch.dirs
++++ /dev/null
+@@ -1,2 +0,0 @@
+-/etc/openvswitch
+-/usr/share/openvswitch/switch
+diff --git a/debian/openvswitch-switch.init b/debian/openvswitch-switch.init
+deleted file mode 100755
+index e4bc692e56..0000000000
+--- a/debian/openvswitch-switch.init
++++ /dev/null
+@@ -1,147 +0,0 @@
+-#! /bin/sh
+-#
+-# Copyright (C) 2011, 2012, 2016 Nicira, Inc.
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at:
+-#
+-#     http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-#
+-### BEGIN INIT INFO
+-# Provides:          openvswitch-switch
+-# Required-Start:    $network $named $remote_fs $syslog
+-# Required-Stop:     $remote_fs
+-# Default-Start:     2 3 4 5
+-# Default-Stop:      0 1 6
+-# Short-Description: Open vSwitch switch
+-# Description:       openvswitch-switch provides the userspace components and utilities for
+-#                    the Open vSwitch kernel-based switch.
+-### END INIT INFO
+-
+-(test -x /usr/sbin/ovs-vswitchd && test -x /usr/sbin/ovsdb-server) || exit 0
+-
+-_SYSTEMCTL_SKIP_REDIRECT=yes
+-SYSTEMCTL_SKIP_REDIRECT=yes
+-
+-. /usr/share/openvswitch/scripts/ovs-lib
+-test -e /etc/default/openvswitch-switch && . /etc/default/openvswitch-switch
+-
+-network_interfaces () {
+-    INTERFACES="/etc/network/interfaces"
+-    [ -e "${INTERFACES}" ] || return
+-    bridges=`ifquery --allow ovs --list`
+-    [ -n "${bridges}" ] && $1 --allow=ovs ${bridges}
+-}
+-
+-load_kmod () {
+-    ovs_ctl load-kmod || exit $?
+-}
+-
+-start () {
+-    if ovs_ctl load-kmod; then
+-        :
+-    else
+-        echo "Module has probably not been built for this kernel."
+-        if ! test -d /usr/share/doc/openvswitch-datapath-source; then
+-            echo "Install the openvswitch-datapath-source package, then read"
+-        else
+-            echo "For instructions, read"
+-        fi
+-        echo "/usr/share/doc/openvswitch-datapath-source/README.Debian"
+-
+-        if test X"$OVS_MISSING_KMOD_OK" = Xyes; then
+-            # We're being invoked by the package postinst.  Do not
+-            # fail package installation just because the kernel module
+-            # is not available.
+-            exit 0
+-        fi
+-    fi
+-    set ovs_ctl ${1-start} --system-id=random
+-    if test X"$FORCE_COREFILES" != X; then
+-        set "$@" --force-corefiles="$FORCE_COREFILES"
+-    fi
+-    set "$@" $OVS_CTL_OPTS
+-    "$@" || exit $?
+-    if [ "$2" = "start" ] && [ "$READ_INTERFACES" != "no" ]; then
+-        network_interfaces ifup
+-    fi
+-}
+-
+-stop () {
+-    [ "$READ_INTERFACES" != "no" ] && network_interfaces ifdown
+-    ovs_ctl stop
+-}
+-
+-restart () {
+-    # OVS_FORCE_RELOAD_KMOD can be set by package postinst script.
+-    if [ "$1" = "--save-flows=yes" ] || \
+-        [ "${OVS_FORCE_RELOAD_KMOD}" = "no" ]; then
+-        start restart
+-    elif [ "${OVS_FORCE_RELOAD_KMOD}" = "yes" ]; then
+-        depmod -a
+-
+-        if [ -e /sys/module/openvswitch ]; then
+-            LOADED_SRCVERSION=`cat /sys/module/openvswitch/srcversion \
+-                               2>/dev/null`
+-            LOADED_VERSION=`cat /sys/module/openvswitch/version \
+-                            2>/dev/null`
+-        fi
+-        SRCVERSION=`modinfo -F srcversion openvswitch 2>/dev/null`
+-        VERSION=`modinfo -F version openvswitch 2>/dev/null`
+-
+-        ovs_ctl_log "Package upgrading:\n"\
+-                    "Loaded version: ${LOADED_VERSION} ${LOADED_SRCVERSION}.\n"\
+-                    "Version on disk: ${VERSION} ${SRCVERSION}."
+-
+-        # If the kernel module was previously loaded and it is different than
+-        # the kernel module on disk, then do a 'force-reload-kmod'.
+-        if [ -n "${LOADED_SRCVERSION}" ] && [ -n "${SRCVERSION}" ] && \
+-            [ "${SRCVERSION}" != "${LOADED_SRCVERSION}" ]; then
+-            start force-reload-kmod
+-        else
+-            start restart
+-        fi
+-    else
+-        READ_INTERFACES="no" stop
+-        READ_INTERFACES="no" start
+-    fi
+-}
+-
+-case $1 in
+-    start)
+-        start
+-        ;;
+-    stop | force-stop)
+-        stop
+-        ;;
+-    reload | force-reload)
+-        # The OVS daemons keep up-to-date.
+-        ;;
+-    restart)
+-        shift
+-        restart "$@"
+-        ;;
+-    status)
+-        ovs_ctl status
+-        exit $?
+-        ;;
+-    force-reload-kmod)
+-        start force-reload-kmod
+-        ;;
+-    load-kmod)
+-        load_kmod
+-        ;;
+-    *)
+-        echo "Usage: $0 {start|stop|restart|force-reload|status|force-stop|force-reload-kmod|load-kmod}" >&2
+-        exit 1
+-        ;;
+-esac
+-
+-exit 0
+diff --git a/debian/openvswitch-switch.install b/debian/openvswitch-switch.install
+deleted file mode 100644
+index 6a6e9a5435..0000000000
+--- a/debian/openvswitch-switch.install
++++ /dev/null
+@@ -1,17 +0,0 @@
+-debian/ifupdown.sh usr/share/openvswitch/scripts
+-etc/bash_completion.d/ovs-vsctl-bashcomp.bash
+-usr/bin/ovs-dpctl
+-usr/bin/ovs-dpctl-top
+-usr/bin/ovs-pcap
+-usr/bin/ovs-tcpdump
+-usr/bin/ovs-tcpundump
+-usr/bin/ovs-vlan-test
+-usr/bin/ovs-vsctl
+-usr/bin/ovsdb-tool
+-usr/sbin/ovs-vswitchd
+-usr/sbin/ovsdb-server
+-usr/share/openvswitch/scripts/ovs-check-dead-ifs
+-usr/share/openvswitch/scripts/ovs-ctl
+-usr/share/openvswitch/scripts/ovs-kmod-ctl
+-usr/share/openvswitch/scripts/ovs-save
+-usr/share/openvswitch/vswitch.ovsschema
+diff --git a/debian/openvswitch-switch.links b/debian/openvswitch-switch.links
+deleted file mode 100644
+index cf58073ff5..0000000000
+--- a/debian/openvswitch-switch.links
++++ /dev/null
+@@ -1,2 +0,0 @@
+-usr/share/openvswitch/scripts/ifupdown.sh etc/network/if-post-down.d/openvswitch
+-usr/share/openvswitch/scripts/ifupdown.sh etc/network/if-pre-up.d/openvswitch
+diff --git a/debian/openvswitch-switch.logrotate b/debian/openvswitch-switch.logrotate
+deleted file mode 100644
+index 1ccf6f5079..0000000000
+--- a/debian/openvswitch-switch.logrotate
++++ /dev/null
+@@ -1,16 +0,0 @@
+-/var/log/openvswitch/*.log {
+-    daily
+-    compress
+-    sharedscripts
+-    create 640 root adm
+-    missingok
+-    rotate 30
+-    postrotate
+-        # Tell Open vSwitch daemons to reopen their log files
+-        if [ -d /var/run/openvswitch ]; then
+-            for ctl in /var/run/openvswitch/*.ctl; do
+-                ovs-appctl -t "$ctl" vlog/reopen 2>/dev/null || :
+-            done
+-        fi
+-    endscript
+-}
+diff --git a/debian/openvswitch-switch.manpages b/debian/openvswitch-switch.manpages
+deleted file mode 100644
+index 1161cfda77..0000000000
+--- a/debian/openvswitch-switch.manpages
++++ /dev/null
+@@ -1,12 +0,0 @@
+-ovsdb/ovsdb-server.1
+-ovsdb/ovsdb-server.5
+-utilities/ovs-ctl.8
+-utilities/ovs-dpctl-top.8
+-utilities/ovs-dpctl.8
+-utilities/ovs-kmod-ctl.8
+-utilities/ovs-pcap.1
+-utilities/ovs-tcpdump.8
+-utilities/ovs-tcpundump.1
+-utilities/ovs-vsctl.8
+-vswitchd/ovs-vswitchd.8
+-vswitchd/ovs-vswitchd.conf.db.5
+diff --git a/debian/openvswitch-switch.postinst b/debian/openvswitch-switch.postinst
+deleted file mode 100755
+index f8abd40e29..0000000000
+--- a/debian/openvswitch-switch.postinst
++++ /dev/null
+@@ -1,60 +0,0 @@
+-#!/bin/sh
+-# postinst script for openvswitch-switch
+-#
+-# see: dh_installdeb(1)
+-
+-set -e
+-
+-# summary of how this script can be called:
+-#        * <postinst> `configure' <most-recently-configured-version>
+-#        * <old-postinst> `abort-upgrade' <new version>
+-#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+-#          <new-version>
+-#        * <postinst> `abort-remove'
+-#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+-#          <failed-install-package> <version> `removing'
+-#          <conflicting-package> <version>
+-# for details, see http://www.debian.org/doc/debian-policy/ or
+-# the debian-policy package
+-
+-
+-case "$1" in
+-    configure)
+-        DEFAULT=/etc/default/openvswitch-switch
+-        TEMPLATE=/usr/share/openvswitch/switch/default.template
+-        if ! test -e $DEFAULT; then
+-            cp $TEMPLATE $DEFAULT
+-        fi
+-        # Certain versions of upstream Ubuntu's openvswitch packages (which
+-        # are forks) may install upstart files which are incompatible
+-        # with the packages generated from this repo. Remove them.
+-        if [ -e "/etc/init/openvswitch-switch.conf" ]; then
+-            rm /etc/init/openvswitch-switch.conf
+-        fi
+-        if [ -e "/etc/init/openvswitch-force-reload-kmod.conf" ]; then
+-            rm /etc/init/openvswitch-force-reload-kmod.conf
+-        fi
+-        ;;
+-
+-    abort-upgrade|abort-remove|abort-deconfigure)
+-        ;;
+-
+-    *)
+-        echo "postinst called with unknown argument \`$1'" >&2
+-        exit 1
+-        ;;
+-esac
+-
+-# Do not fail package installation just because the kernel module
+-# is not available.
+-OVS_MISSING_KMOD_OK=yes
+-export OVS_MISSING_KMOD_OK
+-
+-# force-reload-kmod during upgrade. If a user wants to override this,
+-# they can set the variable OVS_FORCE_RELOAD_KMOD=no while installing.
+-[ -z "${OVS_FORCE_RELOAD_KMOD}" ] && OVS_FORCE_RELOAD_KMOD=yes || true
+-export OVS_FORCE_RELOAD_KMOD
+-
+-#DEBHELPER#
+-
+-exit 0
+diff --git a/debian/openvswitch-switch.postrm b/debian/openvswitch-switch.postrm
+deleted file mode 100755
+index 88bf9fc618..0000000000
+--- a/debian/openvswitch-switch.postrm
++++ /dev/null
+@@ -1,48 +0,0 @@
+-#!/bin/sh
+-# postrm script for openvswitch-switch
+-#
+-# see: dh_installdeb(1)
+-
+-set -e
+-
+-# summary of how this script can be called:
+-#        * <postrm> `remove'
+-#        * <postrm> `purge'
+-#        * <old-postrm> `upgrade' <new-version>
+-#        * <new-postrm> `failed-upgrade' <old-version>
+-#        * <new-postrm> `abort-install'
+-#        * <new-postrm> `abort-install' <old-version>
+-#        * <new-postrm> `abort-upgrade' <old-version>
+-#        * <disappearer's-postrm> `disappear' <overwriter>
+-#          <overwriter-version>
+-# for details, see http://www.debian.org/doc/debian-policy/ or
+-# the debian-policy package
+-
+-
+-case "$1" in
+-    purge)
+-        rm -f /etc/openvswitch/conf.db
+-        rm -f /etc/openvswitch/.conf.db.~lock~
+-        rm -f /etc/default/openvswitch-switch
+-        rm -f /var/log/openvswitch/ovs-vswitchd.log* || true
+-        rm -f /var/log/openvswitch/ovsdb-server.log* || true
+-        rm -f /etc/openvswitch/system-id.conf
+-        ;;
+-
+-    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+-        ;;
+-
+-    *)
+-        echo "postrm called with unknown argument \`$1'" >&2
+-        exit 1
+-        ;;
+-esac
+-
+-# dh_installdeb will replace this with shell code automatically
+-# generated by other debhelper scripts.
+-
+-#DEBHELPER#
+-
+-exit 0
+-
+-
+diff --git a/debian/openvswitch-switch.template b/debian/openvswitch-switch.template
+deleted file mode 100644
+index d7c7796892..0000000000
+--- a/debian/openvswitch-switch.template
++++ /dev/null
+@@ -1,8 +0,0 @@
+-# This is a POSIX shell fragment                -*- sh -*-
+-
+-# FORCE_COREFILES: If 'yes' then core files will be enabled.
+-# FORCE_COREFILES=yes
+-
+-# OVS_CTL_OPTS: Extra options to pass to ovs-ctl.  This is, for example,
+-# a suitable place to specify --ovs-vswitchd-wrapper=valgrind.
+-# OVS_CTL_OPTS=
+diff --git a/debian/openvswitch-test.dirs b/debian/openvswitch-test.dirs
+deleted file mode 100644
+index daaae31afe..0000000000
+--- a/debian/openvswitch-test.dirs
++++ /dev/null
+@@ -1 +0,0 @@
+-usr/share/pyshared/ovstest/
+diff --git a/debian/openvswitch-test.install b/debian/openvswitch-test.install
+deleted file mode 100644
+index 8a01a51259..0000000000
+--- a/debian/openvswitch-test.install
++++ /dev/null
+@@ -1,3 +0,0 @@
+-usr/bin/ovs-l3ping
+-usr/bin/ovs-test
+-usr/share/openvswitch/python/ovstest usr/lib/python2.7/dist-packages/
+diff --git a/debian/openvswitch-test.manpages b/debian/openvswitch-test.manpages
+deleted file mode 100644
+index 3f71858691..0000000000
+--- a/debian/openvswitch-test.manpages
++++ /dev/null
+@@ -1 +0,0 @@
+-utilities/ovs-l3ping.8
+diff --git a/debian/openvswitch-testcontroller.README.Debian b/debian/openvswitch-testcontroller.README.Debian
+deleted file mode 100644
+index 0548826efe..0000000000
+--- a/debian/openvswitch-testcontroller.README.Debian
++++ /dev/null
+@@ -1,12 +0,0 @@
+-README.Debian for openvswitch-testcontroller
+---------------------------------------------
+-
+-The controller in this package enables OpenFlow switches that connect
+-to it to act as MAC-learning Ethernet switches.  It can be used for
+-initial testing of OpenFlow networks.  It is not a necessary or
+-desirable part of a production OpenFlow deployment.
+-
+-To (re)configure the controller, edit /etc/default/openvswitch-testcontroller
+-and run "/etc/init.d/openvswitch-testcontroller restart".
+-
+- -- Ben Pfaff <pfaffben@debian.org>, Thu, 14 Aug 2014 10:49:34 -0700
+diff --git a/debian/openvswitch-testcontroller.default b/debian/openvswitch-testcontroller.default
+deleted file mode 100644
+index c6db595703..0000000000
+--- a/debian/openvswitch-testcontroller.default
++++ /dev/null
+@@ -1,29 +0,0 @@
+-# This is a POSIX shell fragment                -*- sh -*-
+-
+-# LISTEN: What OpenFlow connection methods should the controller listen on?
+-#
+-# This is a space-delimited list of connection methods:
+-#
+-# * "pssl:[PORT]": Listen for SSL connections on the specified PORT
+-#   (default: 6653).  The private key, certificate, and CA certificate
+-#   must be specified below.
+-#
+-# * "ptcp:[PORT]": Listen for TCP connections on the specified PORT
+-#   (default: 6653).  Not recommended for security reasons.
+-#
+-LISTEN="pssl:"
+-
+-# PRIVKEY: Name of file containing controller's private key.
+-# Required if SSL enabled.
+-PRIVKEY=/etc/openvswitch-testcontroller/privkey.pem
+-
+-# CERT: Name of file containing certificate for private key.
+-# Required if SSL enabled.
+-CERT=/etc/openvswitch-testcontroller/cert.pem
+-
+-# CACERT: Name of file containing switch CA certificate.
+-# Required if SSL enabled.
+-CACERT=/etc/openvswitch-testcontroller/cacert.pem
+-
+-# Additional options to pass to ovs-testcontroller, e.g. "--hub"
+-DAEMON_OPTS=""
+diff --git a/debian/openvswitch-testcontroller.dirs b/debian/openvswitch-testcontroller.dirs
+deleted file mode 100644
+index d8d4f775fe..0000000000
+--- a/debian/openvswitch-testcontroller.dirs
++++ /dev/null
+@@ -1 +0,0 @@
+-etc/openvswitch-testcontroller
+diff --git a/debian/openvswitch-testcontroller.init b/debian/openvswitch-testcontroller.init
+deleted file mode 100755
+index 67b7a994fb..0000000000
+--- a/debian/openvswitch-testcontroller.init
++++ /dev/null
+@@ -1,278 +0,0 @@
+-#!/bin/sh
+-#
+-# Copyright (c) 2011, 2014 Nicira, Inc.
+-# Copyright (c) 2007, 2009 Javier Fernandez-Sanguino <jfs@debian.org>
+-#
+-# This is free software; you may redistribute it and/or modify
+-# it under the terms of the GNU General Public License as
+-# published by the Free Software Foundation; either version 2,
+-# or (at your option) any later version.
+-#
+-# This is distributed in the hope that it will be useful, but
+-# WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License with
+-# the Debian operating system, in /usr/share/common-licenses/GPL;  if
+-# not, write to the Free Software Foundation, Inc., 59 Temple Place,
+-# Suite 330, Boston, MA 02111-1307 USA
+-#
+-### BEGIN INIT INFO
+-# Provides:          openvswitch-testcontroller
+-# Required-Start:    $network $local_fs $remote_fs
+-# Required-Stop:     $remote_fs
+-# Should-Start:      $named
+-# Should-Stop:
+-# Default-Start:     2 3 4 5
+-# Default-Stop:      0 1 6
+-# Short-Description: Simple OpenFlow controller for testing
+-# Description:       This controller enables OpenFlow switches that connect to
+-#                    it to act as MAC-learning Ethernet switches.
+-### END INIT INFO
+-
+-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+-
+-DAEMON=/usr/bin/ovs-testcontroller # Introduce the server's location here
+-NAME=ovs-testcontroller         # Introduce the short server's name here
+-DESC=ovs-testcontroller         # Introduce a short description here
+-LOGDIR=/var/log/openvswitch	# Log directory to use
+-
+-PIDFILE=/var/run/openvswitch/$NAME.pid
+-
+-test -x $DAEMON || exit 0
+-
+-. /lib/lsb/init-functions
+-
+-# Default options, these can be overriden by the information
+-# at /etc/default/openvswitch-testcontroller
+-DAEMON_OPTS=""          # Additional options given to the server
+-
+-DODTIME=10              # Time to wait for the server to die, in seconds
+-                        # If this value is set too low you might not
+-                        # let some servers to die gracefully and
+-                        # 'restart' will not work
+-
+-LOGFILE=$LOGDIR/$NAME.log  # Server logfile
+-#DAEMONUSER=            # User to run the daemons as. If this value
+-                        # is set start-stop-daemon will chuid the server
+-
+-# Include defaults if available
+-default=/etc/default/openvswitch-testcontroller
+-if [ -f $default ] ; then
+-    . $default
+-fi
+-
+-# Check that the user exists (if we set a user)
+-# Does the user exist?
+-if [ -n "$DAEMONUSER" ] ; then
+-    if getent passwd | grep -q "^$DAEMONUSER:"; then
+-        # Obtain the uid and gid
+-        DAEMONUID=`getent passwd |grep "^$DAEMONUSER:" | awk -F : '{print $3}'`
+-        DAEMONGID=`getent passwd |grep "^$DAEMONUSER:" | awk -F : '{print $4}'`
+-    else
+-        log_failure_msg "The user $DAEMONUSER, required to run $NAME does not exist."
+-        exit 1
+-    fi
+-fi
+-
+-
+-set -e
+-
+-running_pid() {
+-# Check if a given process pid's cmdline matches a given name
+-    pid=$1
+-    name=$2
+-    [ -z "$pid" ] && return 1
+-    [ ! -d /proc/$pid ] &&  return 1
+-    cmd=`cat /proc/$pid/cmdline | tr "\000" "\n"|head -n 1 |cut -d : -f 1`
+-    # Is this the expected server
+-    [ "$cmd" != "$name" ] &&  return 1
+-    return 0
+-}
+-
+-running() {
+-# Check if the process is running looking at /proc
+-# (works for all users)
+-
+-    # No pidfile, probably no daemon present
+-    [ ! -f "$PIDFILE" ] && return 1
+-    pid=`cat $PIDFILE`
+-    running_pid $pid $DAEMON || return 1
+-    return 0
+-}
+-
+-start_server() {
+-    if [ -z "$LISTEN" ]; then
+-        echo "$default: No connection methods configured, controller disabled" >&2
+-        exit 0
+-    fi
+-
+-    if [ ! -d /var/run/openvswitch ]; then
+-        install -d -m 755 -o root -g root /var/run/openvswitch
+-    fi
+-
+-    SSL_OPTS=
+-    case $LISTEN in
+-        *ssl*)
+-            : ${PRIVKEY:=/etc/openvswitch-testcontroller/privkey.pem}
+-            : ${CERT:=/etc/openvswitch-testcontroller/cert.pem}
+-            : ${CACERT:=/etc/openvswitch-testcontroller/cacert.pem}
+-            if test ! -e "$PRIVKEY" || test ! -e "$CERT" ||
+-                test ! -e "$CACERT"; then
+-                if test ! -e "$PRIVKEY"; then
+-                    echo "$PRIVKEY: private key missing" >&2
+-                fi
+-                if test ! -e "$CERT"; then
+-                    echo "$CERT: certificate for private key missing" >&2
+-                fi
+-                if test ! -e "$CACERT"; then
+-                    echo "$CACERT: CA certificate missing" >&2
+-                fi
+-                exit 1
+-            fi
+-            SSL_OPTS="--private-key=$PRIVKEY --certificate=$CERT --ca-cert=$CACERT"
+-            ;;
+-    esac
+-
+-# Start the process using the wrapper
+-        if [ -z "$DAEMONUSER" ] ; then
+-            start-stop-daemon --start --pidfile $PIDFILE \
+-                        --exec $DAEMON -- --detach --pidfile=$PIDFILE \
+-                        $LISTEN $DAEMON_OPTS $SSL_OPTS
+-            errcode=$?
+-        else
+-# if we are using a daemonuser then change the user id
+-            start-stop-daemon --start --quiet --pidfile $PIDFILE \
+-                        --chuid $DAEMONUSER --exec $DAEMON -- \
+-                        --detach --pidfile=$PIDFILE $LISTEN $DAEMON_OPTS \
+-                        $SSL_OPTS
+-            errcode=$?
+-        fi
+-        return $errcode
+-}
+-
+-stop_server() {
+-# Stop the process using the wrapper
+-        if [ -z "$DAEMONUSER" ] ; then
+-            start-stop-daemon --stop --quiet --pidfile $PIDFILE \
+-                        --exec $DAEMON
+-            errcode=$?
+-        else
+-# if we are using a daemonuser then look for process that match
+-            start-stop-daemon --stop --quiet --pidfile $PIDFILE \
+-                        --user $DAEMONUSER --exec $DAEMON
+-            errcode=$?
+-        fi
+-
+-        return $errcode
+-}
+-
+-reload_server() {
+-    [ ! -f "$PIDFILE" ] && return 1
+-    pid=`cat $PIDFILE` # This is the daemon's pid
+-    # Send a SIGHUP
+-    kill -1 $pid
+-    return $?
+-}
+-
+-force_stop() {
+-# Force the process to die killing it manually
+-    [ ! -e "$PIDFILE" ] && return
+-    if running ; then
+-        kill -15 $pid
+-        # Is it really dead?
+-        sleep "$DODTIME"
+-        if running ; then
+-            kill -9 $pid
+-            sleep "$DODTIME"
+-            if running ; then
+-                echo "Cannot kill $NAME (pid=$pid)!"
+-                exit 1
+-            fi
+-        fi
+-    fi
+-    rm -f $PIDFILE
+-}
+-
+-
+-case "$1" in
+-  start)
+-        log_daemon_msg "Starting $DESC " "$NAME"
+-        # Check if it's running first
+-        if running ;  then
+-            log_progress_msg "apparently already running"
+-            log_end_msg 0
+-            exit 0
+-        fi
+-        if start_server && running ;  then
+-            # It's ok, the server started and is running
+-            log_end_msg 0
+-        else
+-            # Either we could not start it or it is not running
+-            # after we did
+-            # NOTE: Some servers might die some time after they start,
+-            # this code does not try to detect this and might give
+-            # a false positive (use 'status' for that)
+-            log_end_msg 1
+-        fi
+-        ;;
+-  stop)
+-        log_daemon_msg "Stopping $DESC" "$NAME"
+-        if running ; then
+-            # Only stop the server if we see it running
+-            stop_server
+-            log_end_msg $?
+-        else
+-            # If it's not running don't do anything
+-            log_progress_msg "apparently not running"
+-            log_end_msg 0
+-            exit 0
+-        fi
+-        ;;
+-  force-stop)
+-        # First try to stop gracefully the program
+-        $0 stop
+-        if running; then
+-            # If it's still running try to kill it more forcefully
+-            log_daemon_msg "Stopping (force) $DESC" "$NAME"
+-            force_stop
+-            log_end_msg $?
+-        fi
+-        ;;
+-  restart|force-reload)
+-        log_daemon_msg "Restarting $DESC" "$NAME"
+-        if running; then
+-            stop_server
+-            # Wait some sensible amount, some server need this.
+-            [ -n "$DODTIME" ] && sleep $DODTIME
+-        fi
+-        start_server
+-        running
+-        log_end_msg $?
+-        ;;
+-  status)
+-
+-        log_daemon_msg "Checking status of $DESC" "$NAME"
+-        if running ;  then
+-            log_progress_msg "running"
+-            log_end_msg 0
+-        else
+-            log_progress_msg "apparently not running"
+-            log_end_msg 1
+-            exit 1
+-        fi
+-        ;;
+-  # Use this if the daemon cannot reload
+-  reload)
+-        log_warning_msg "Reloading $NAME daemon: not implemented, as the daemon"
+-        log_warning_msg "cannot re-read the config file (use restart)."
+-        ;;
+-  *)
+-        N=/etc/init.d/openvswitch-testcontroller
+-        echo "Usage: $N {start|stop|force-stop|restart|force-reload|status}" >&2
+-        exit 1
+-        ;;
+-esac
+-
+-exit 0
+diff --git a/debian/openvswitch-testcontroller.install b/debian/openvswitch-testcontroller.install
+deleted file mode 100644
+index d368f2a013..0000000000
+--- a/debian/openvswitch-testcontroller.install
++++ /dev/null
+@@ -1 +0,0 @@
+-usr/bin/ovs-testcontroller
+diff --git a/debian/openvswitch-testcontroller.manpages b/debian/openvswitch-testcontroller.manpages
+deleted file mode 100644
+index 41fd492c11..0000000000
+--- a/debian/openvswitch-testcontroller.manpages
++++ /dev/null
+@@ -1 +0,0 @@
+-utilities/ovs-testcontroller.8
+diff --git a/debian/openvswitch-testcontroller.postinst b/debian/openvswitch-testcontroller.postinst
+deleted file mode 100755
+index 7a25083f2f..0000000000
+--- a/debian/openvswitch-testcontroller.postinst
++++ /dev/null
+@@ -1,52 +0,0 @@
+-#!/bin/sh
+-# postinst script for openvswitch-testcontroller
+-#
+-# see: dh_installdeb(1)
+-
+-set -e
+-
+-# summary of how this script can be called:
+-#        * <postinst> `configure' <most-recently-configured-version>
+-#        * <old-postinst> `abort-upgrade' <new version>
+-#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+-#          <new-version>
+-#        * <postinst> `abort-remove'
+-#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+-#          <failed-install-package> <version> `removing'
+-#          <conflicting-package> <version>
+-# for details, see http://www.debian.org/doc/debian-policy/ or
+-# the debian-policy package
+-
+-
+-case "$1" in
+-    configure)
+-        cd /etc/openvswitch-testcontroller
+-        if ! test -e cacert.pem; then
+-            ln -s /var/lib/openvswitch/pki/switchca/cacert.pem cacert.pem
+-        fi
+-        if ! test -e privkey.pem || ! test -e cert.pem; then
+-            oldumask=$(umask)
+-            umask 077
+-            ovs-pki req+sign tmp controller >/dev/null
+-            mv tmp-privkey.pem privkey.pem
+-            mv tmp-cert.pem cert.pem
+-            mv tmp-req.pem req.pem
+-            chmod go+r cert.pem req.pem
+-            umask $oldumask
+-        fi
+-        ;;
+-
+-    abort-upgrade|abort-remove|abort-deconfigure)
+-        ;;
+-
+-    *)
+-        echo "postinst called with unknown argument \`$1'" >&2
+-        exit 1
+-        ;;
+-esac
+-
+-#DEBHELPER#
+-
+-exit 0
+-
+-
+diff --git a/debian/openvswitch-testcontroller.postrm b/debian/openvswitch-testcontroller.postrm
+deleted file mode 100755
+index afca1bbf07..0000000000
+--- a/debian/openvswitch-testcontroller.postrm
++++ /dev/null
+@@ -1,44 +0,0 @@
+-#!/bin/sh
+-# postrm script for openvswitch-testcontroller
+-#
+-# see: dh_installdeb(1)
+-
+-set -e
+-
+-# summary of how this script can be called:
+-#        * <postrm> `remove'
+-#        * <postrm> `purge'
+-#        * <old-postrm> `upgrade' <new-version>
+-#        * <new-postrm> `failed-upgrade' <old-version>
+-#        * <new-postrm> `abort-install'
+-#        * <new-postrm> `abort-install' <old-version>
+-#        * <new-postrm> `abort-upgrade' <old-version>
+-#        * <disappearer's-postrm> `disappear' <overwriter>
+-#          <overwriter-version>
+-# for details, see http://www.debian.org/doc/debian-policy/ or
+-# the debian-policy package
+-
+-
+-case "$1" in
+-    purge)
+-        if cd /etc/openvswitch-testcontroller; then
+-            rm -f cacert.pem cert.pem privkey.pem req.pem
+-            rm -f tmp-privkey.pem tmp-cert.pem tmp-req.pem
+-        fi
+-        ;;
+-
+-    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+-        ;;
+-
+-    *)
+-        echo "postrm called with unknown argument \`$1'" >&2
+-        exit 1
+-        ;;
+-esac
+-
+-# dh_installdeb will replace this with shell code automatically
+-# generated by other debhelper scripts.
+-
+-#DEBHELPER#
+-
+-exit 0
+diff --git a/debian/openvswitch-vtep.default b/debian/openvswitch-vtep.default
+deleted file mode 100644
+index 2e888e7265..0000000000
+--- a/debian/openvswitch-vtep.default
++++ /dev/null
+@@ -1,4 +0,0 @@
+-# This is a POSIX shell fragment                -*- sh -*-
+-
+-# ENABLE_OVS_VTEP: Whether to start ovs-vtep.
+-ENABLE_OVS_VTEP="false"
+diff --git a/debian/openvswitch-vtep.dirs b/debian/openvswitch-vtep.dirs
+deleted file mode 100644
+index b0a8f64dd7..0000000000
+--- a/debian/openvswitch-vtep.dirs
++++ /dev/null
+@@ -1 +0,0 @@
+-/usr/share/openvswitch
+diff --git a/debian/openvswitch-vtep.init b/debian/openvswitch-vtep.init
+deleted file mode 100644
+index ebf4e26dc5..0000000000
+--- a/debian/openvswitch-vtep.init
++++ /dev/null
+@@ -1,78 +0,0 @@
+-#!/bin/sh
+-
+-### BEGIN INIT INFO
+-# Provides:          openvswitch-vtep
+-# Required-Start:    $network $named $remote_fs $syslog
+-# Required-Stop:     $remote_fs
+-# Default-Start:     2 3 4 5
+-# Default-Stop:      0 1 6
+-# Short-Description: Open vSwitch VTEP emulator
+-# Description:       Initializes the Open vSwitch VTEP emulator
+-### END INIT INFO
+-
+-
+-# Include defaults if available
+-default=/etc/default/openvswitch-vtep
+-if [ -f $default ] ; then
+-    . $default
+-fi
+-
+-start () {
+-    if [ "$ENABLE_OVS_VTEP" = "false" ]; then
+-        exit 0
+-    fi
+-
+-    update-rc.d -f openvswitch-switch remove >/dev/null 2>&1
+-    /etc/init.d/openvswitch-switch stop
+-
+-    mkdir -p "/var/run/openvswitch"
+-
+-    if [ ! -e "/etc/openvswitch/conf.db" ]; then
+-        ovsdb-tool create /etc/openvswitch/conf.db /usr/share/openvswitch/vswitch.ovsschema
+-    fi
+-
+-    if [ ! -e "/etc/openvswitch/vtep.db" ]; then
+-        ovsdb-tool create /etc/openvswitch/vtep.db /usr/share/openvswitch/vtep.ovsschema
+-    fi
+-
+-    if [ ! -e "/etc/openvswitch/ovsclient-cert.pem" ]; then
+-        export RANDFILE="/root/.rnd"
+-        cd /etc/openvswitch && ovs-pki req ovsclient && ovs-pki self-sign ovsclient
+-    fi
+-
+-    ovsdb-server --pidfile --detach --log-file --remote \
+-        punix:/var/run/openvswitch/db.sock \
+-        --remote=db:hardware_vtep,Global,managers \
+-        --private-key=/etc/openvswitch/ovsclient-privkey.pem \
+-        --certificate=/etc/openvswitch/ovsclient-cert.pem \
+-        --bootstrap-ca-cert=/etc/openvswitch/vswitchd.cacert \
+-        /etc/openvswitch/conf.db /etc/openvswitch/vtep.db
+-
+-    modprobe openvswitch
+-
+-    ovs-vswitchd --pidfile --detach --log-file \
+-        unix:/var/run/openvswitch/db.sock
+-}
+-
+-stop () {
+-    /etc/init.d/openvswitch-switch stop
+-}
+-
+-case $1 in
+-    start)
+-        start
+-        ;;
+-    stop)
+-        stop
+-        ;;
+-    restart|force-reload)
+-        stop
+-        start
+-        ;;
+-    *)
+-        echo "Usage: $0 {start|stop|restart|force-reload}" >&2
+-        exit 1
+-        ;;
+-esac
+-
+-exit 0
+diff --git a/debian/openvswitch-vtep.install b/debian/openvswitch-vtep.install
+deleted file mode 100644
+index b7852649d5..0000000000
+--- a/debian/openvswitch-vtep.install
++++ /dev/null
+@@ -1,3 +0,0 @@
+-usr/share/openvswitch/scripts/ovs-vtep
+-usr/share/openvswitch/vtep.ovsschema
+-usr/bin/vtep-ctl
+diff --git a/debian/openvswitch-vtep.manpages b/debian/openvswitch-vtep.manpages
+deleted file mode 100644
+index 54d0c768ff..0000000000
+--- a/debian/openvswitch-vtep.manpages
++++ /dev/null
+@@ -1 +0,0 @@
+-vtep/vtep-ctl.8
+diff --git a/debian/ovn-central.init b/debian/ovn-central.init
+index 60cee95a38..cee6900868 100755
+--- a/debian/ovn-central.init
++++ b/debian/ovn-central.init
+@@ -13,7 +13,7 @@
+ ### END INIT INFO
+ 
+ test -x /usr/bin/ovn-northd  || exit 0
+-test -x /usr/share/openvswitch/scripts/ovn-ctl || exit 0
++test -x /usr/share/ovn/scripts/ovn-ctl || exit 0
+ 
+ _SYSTEMCTL_SKIP_REDIRECT=yes
+ SYSTEMCTL_SKIP_REDIRECT=yes
+@@ -24,13 +24,13 @@ if [ -e /etc/default/ovn-central ]; then
+ fi
+ 
+ start () {
+-    set /usr/share/openvswitch/scripts/ovn-ctl ${1-start_northd}
++    set /usr/share/ovn/scripts/ovn-ctl ${1-start_northd}
+     set "$@" $OVN_CTL_OPTS
+     "$@" || exit $?
+ }
+ 
+ stop_northd () {
+-    set /usr/share/openvswitch/scripts/ovn-ctl ${1-stop_northd}
++    set /usr/share/ovn/scripts/ovn-ctl ${1-stop_northd}
+     set "$@" $OVN_CTL_OPTS
+     "$@" || exit $?
+ }
+@@ -48,7 +48,7 @@ case $1 in
+     reload | force-reload)
+         ;;
+     status)
+-        /usr/share/openvswitch/scripts/ovn-ctl status_northd
++        /usr/share/ovn/scripts/ovn-ctl status_northd
+         exit $?
+         ;;
+     *)
+diff --git a/debian/ovn-central.install b/debian/ovn-central.install
+index 733d3fc5ee..095ca7cfaf 100644
+--- a/debian/ovn-central.install
++++ b/debian/ovn-central.install
+@@ -1,3 +1,3 @@
+ usr/bin/ovn-northd
+-usr/share/openvswitch/ovn-nb.ovsschema
+-usr/share/openvswitch/ovn-sb.ovsschema
++usr/share/ovn/ovn-nb.ovsschema
++usr/share/ovn/ovn-sb.ovsschema
+diff --git a/debian/ovn-central.manpages b/debian/ovn-central.manpages
+index 2ddb43784f..10ba8d3e5c 100644
+--- a/debian/ovn-central.manpages
++++ b/debian/ovn-central.manpages
+@@ -1 +1 @@
+-ovn/northd/ovn-northd.8
++northd/ovn-northd.8
+diff --git a/debian/ovn-common.install b/debian/ovn-common.install
+index e3c3c000ae..eb1aee4a86 100644
+--- a/debian/ovn-common.install
++++ b/debian/ovn-common.install
+@@ -1,9 +1,10 @@
+ usr/bin/ovn-nbctl
+ usr/bin/ovn-sbctl
++usr/bin/ovn-appctl
+ usr/bin/ovn-ic-nbctl
+ usr/bin/ovn-ic-sbctl
+ usr/bin/ovn-trace
+ usr/bin/ovn-detrace
+-usr/share/openvswitch/scripts/ovn-ctl
+-usr/share/openvswitch/scripts/ovndb-servers.ocf
+-usr/lib/*/libovn*.so.*
++usr/share/ovn/scripts/ovn-ctl
++usr/share/ovn/scripts/ovn-lib
++usr/share/ovn/scripts/ovndb-servers.ocf
+diff --git a/debian/ovn-common.manpages b/debian/ovn-common.manpages
+index ba0fe8a167..743caa9bd4 100644
+--- a/debian/ovn-common.manpages
++++ b/debian/ovn-common.manpages
+@@ -1,12 +1,12 @@
+-ovn/ovn-architecture.7
+-ovn/ovn-nb.5
+-ovn/ovn-sb.5
+-ovn/ovn-ic-nb.5
+-ovn/ovn-ic-sb.5
+-ovn/utilities/ovn-ctl.8
+-ovn/utilities/ovn-nbctl.8
+-ovn/utilities/ovn-sbctl.8
+-ovn/utilities/ovn-ic-nbctl.8
+-ovn/utilities/ovn-ic-sbctl.8
+-ovn/utilities/ovn-trace.8
+-ovn/utilities/ovn-detrace.1
++ovn-architecture.7
++ovn-nb.5
++ovn-sb.5
++ovn-ic-nb.5
++ovn-ic-sb.5
++utilities/ovn-ctl.8
++utilities/ovn-nbctl.8
++utilities/ovn-sbctl.8
++utilities/ovn-ic-nbctl.8
++utilities/ovn-ic-sbctl.8
++utilities/ovn-trace.8
++utilities/ovn-detrace.1
+diff --git a/debian/ovn-common.postinst b/debian/ovn-common.postinst
+index 588044fbce..15f3c75772 100644
+--- a/debian/ovn-common.postinst
++++ b/debian/ovn-common.postinst
+@@ -8,7 +8,7 @@ set -e
+ case "$1" in
+     configure)
+         mkdir -p /usr/lib/ocf/resource.d/ovn
+-        ln -sf /usr/share/openvswitch/scripts/ovndb-servers.ocf /usr/lib/ocf/resource.d/ovn/ovndb-servers
++        ln -sf /usr/share/ovn/scripts/ovndb-servers.ocf /usr/lib/ocf/resource.d/ovn/ovndb-servers
+         ;;
+     abort-upgrade|abort-remove|abort-deconfigure)
+         ;;
+diff --git a/debian/ovn-controller-vtep.init b/debian/ovn-controller-vtep.init
+index be0a243581..00fac6f532 100755
+--- a/debian/ovn-controller-vtep.init
++++ b/debian/ovn-controller-vtep.init
+@@ -13,7 +13,7 @@
+ ### END INIT INFO
+ 
+ test -x /usr/bin/ovn-controller-vtep  || exit 0
+-test -x /usr/share/openvswitch/scripts/ovn-ctl || exit 0
++test -x /usr/share/ovn/scripts/ovn-ctl || exit 0
+ 
+ _SYSTEMCTL_SKIP_REDIRECT=yes
+ SYSTEMCTL_SKIP_REDIRECT=yes
+@@ -24,7 +24,7 @@ if [ -e /etc/default/ovn-controller-vtep ]; then
+ fi
+ 
+ start () {
+-    set /usr/share/openvswitch/scripts/ovn-ctl ${1-start_controller_vtep}
++    set /usr/share/ovn/scripts/ovn-ctl ${1-start_controller_vtep}
+     set "$@" $OVN_CTL_OPTS
+     "$@" || exit $?
+ }
+@@ -34,13 +34,13 @@ case $1 in
+         start
+         ;;
+     stop | force-stop)
+-        /usr/share/openvswitch/scripts/ovn-ctl stop_controller_vtep
++        /usr/share/ovn/scripts/ovn-ctl stop_controller_vtep
+         ;;
+     restart)
+         start restart_controller_vtep
+         ;;
+     status)
+-        /usr/share/openvswitch/scripts/ovn-ctl status_controller_vtep
++        /usr/share/ovn/scripts/ovn-ctl status_controller_vtep
+         exit $?
+         ;;
+     reload | force-reload)
+diff --git a/debian/ovn-controller-vtep.manpages b/debian/ovn-controller-vtep.manpages
+index 787301704e..b87987016f 100644
+--- a/debian/ovn-controller-vtep.manpages
++++ b/debian/ovn-controller-vtep.manpages
+@@ -1 +1 @@
+-ovn/controller-vtep/ovn-controller-vtep.8
++controller-vtep/ovn-controller-vtep.8
+diff --git a/debian/ovn-host.init b/debian/ovn-host.init
+index 39c3bcf162..e26f417e35 100755
+--- a/debian/ovn-host.init
++++ b/debian/ovn-host.init
+@@ -13,7 +13,7 @@
+ ### END INIT INFO
+ 
+ test -x /usr/bin/ovn-controller  || exit 0
+-test -x /usr/share/openvswitch/scripts/ovn-ctl || exit 0
++test -x /usr/share/ovn/scripts/ovn-ctl || exit 0
+ 
+ _SYSTEMCTL_SKIP_REDIRECT=yes
+ SYSTEMCTL_SKIP_REDIRECT=yes
+@@ -24,7 +24,7 @@ if [ -e /etc/default/ovn-host ]; then
+ fi
+ 
+ start () {
+-    set /usr/share/openvswitch/scripts/ovn-ctl ${1-start_controller}
++    set /usr/share/ovn/scripts/ovn-ctl ${1-start_controller}
+     set "$@" $OVN_CTL_OPTS
+     "$@" || exit $?
+ }
+@@ -34,13 +34,13 @@ case $1 in
+         start
+         ;;
+     stop | force-stop)
+-        /usr/share/openvswitch/scripts/ovn-ctl stop_controller
++        /usr/share/ovn/scripts/ovn-ctl stop_controller
+         ;;
+     restart)
+         start restart_controller
+         ;;
+     status)
+-        /usr/share/openvswitch/scripts/ovn-ctl status_controller
++        /usr/share/ovn/scripts/ovn-ctl status_controller
+         exit $?
+         ;;
+     reload | force-reload)
+diff --git a/debian/ovn-host.manpages b/debian/ovn-host.manpages
+index 4f9e7bc90c..aa27066ffe 100644
+--- a/debian/ovn-host.manpages
++++ b/debian/ovn-host.manpages
+@@ -1 +1 @@
+-ovn/controller/ovn-controller.8
++controller/ovn-controller.8
+diff --git a/debian/python-openvswitch.dirs b/debian/python-openvswitch.dirs
+deleted file mode 100644
+index cbf0de33d9..0000000000
+--- a/debian/python-openvswitch.dirs
++++ /dev/null
+@@ -1,2 +0,0 @@
+-usr/share/pyshared/ovs/
+-usr/share/pyshared/ovs/db/
+diff --git a/debian/python-openvswitch.install b/debian/python-openvswitch.install
+deleted file mode 100644
+index 0472d413f6..0000000000
+--- a/debian/python-openvswitch.install
++++ /dev/null
+@@ -1 +0,0 @@
+-usr/share/openvswitch/python/ovs usr/lib/python2.7/dist-packages/
+diff --git a/debian/rules b/debian/rules
+index 9d0a81f1a7..f77deba420 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -9,10 +9,9 @@
+ #
+ # Modified to make a template file for a multi-binary package with separated
+ # build-arch and build-indep targets  by Bill Allombert 2001
+-#export DH_VERBOSE=1
++export DH_VERBOSE=1
+ 
+-PACKAGE=openvswitch
+-PACKAGE_DKMS=openvswitch-datapath-dkms
++PACKAGE=ovn
+ include /usr/share/dpkg/pkg-info.mk
+ 
+ ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+@@ -22,7 +21,7 @@ PARALLEL =
+ endif
+ 
+ %:
+-	dh $@ --with autoreconf,python2 --parallel
++	dh $@ --with autoreconf,python3 --parallel
+ 
+ # use --as-needed only if supported by dh-autoreconf (to simplify backporting)
+ DH_AS_NEEDED=$(shell dpkg --compare-versions $$(dpkg --status dh-autoreconf | grep Version | cut -d' ' -f2) ge 6 && echo --as-needed)
+@@ -30,7 +29,10 @@ override_dh_autoreconf:
+ 	dh_autoreconf $(DH_AS_NEEDED)
+ 
+ override_dh_auto_configure:
+-	dh_auto_configure -- --enable-ssl --enable-shared $(DATAPATH_CONFIGURE_OPTS)
++	dh_auto_configure -- --disable-ssl --disable-shared $(DATAPATH_CONFIGURE_OPTS)
++
++override_dh_shlibdeps:
++	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+ 
+ override_dh_auto_test:
+ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+@@ -42,16 +44,14 @@ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+ endif
+ 
+ override_dh_auto_build:
+-	dh_auto_build -- dist distdir=openvswitch
++	dh_auto_build -- dist distdir=ovn
+ 
+ override_dh_auto_clean:
+-	rm -f python/ovs/*.pyc python/ovs/db/*.pyc
+ 	dh_auto_clean
++	dh_autoreconf_clean
+ 
+ override_dh_install-arch:
+ 	dh_install
+-	# openvswitch-switch
+-	cp debian/openvswitch-switch.template debian/openvswitch-switch/usr/share/openvswitch/switch/default.template
+ 
+ 	# ovn-host
+ 	cp debian/ovn-host.template debian/ovn-host/usr/share/ovn/host/default.template
+@@ -62,38 +62,9 @@ override_dh_install-arch:
+ override_dh_install-indep:
+ 	dh_install
+ 
+-	# openvswitch-datapath-source
+-	cp debian/rules.modules debian/openvswitch-datapath-source/usr/src/modules/openvswitch-datapath/debian/rules
+-	chmod 755 debian/openvswitch-datapath-source/usr/src/modules/openvswitch-datapath/debian/rules
+-	cd debian/openvswitch-datapath-source/usr/src && tar -c modules | bzip2 -9 > openvswitch-datapath.tar.bz2 && rm -rf modules
+-
+-	# openvswitch-datapath-dkms
+-	# setup the dirs
+-	dh_installdirs -p$(PACKAGE_DKMS) usr/src/$(PACKAGE)-$(DEB_VERSION_UPSTREAM)
+-
+-	# copy the source
+-	cd debian/$(PACKAGE_DKMS)/usr/src/$(PACKAGE)-$(DEB_VERSION_UPSTREAM) && tar xvzf $(CURDIR)/openvswitch.tar.gz && mv openvswitch/* openvswitch/.[a-z]* . && rmdir openvswitch
+-
+-	# check we can get kernel module names
+-	$(MAKE) -C datapath print-build-modules
+-
+-	# Prepare dkms.conf from the dkms.conf.in template
+-	sed "s/__VERSION__/$(DEB_VERSION_UPSTREAM)/g; s/__MODULES__/$(shell $(MAKE) -C datapath print-build-modules | grep -v make)/" debian/dkms.conf.in > debian/$(PACKAGE_DKMS)/usr/src/$(PACKAGE)-$(DEB_VERSION_UPSTREAM)/dkms.conf
+-
+-	# We don't need the debian folder in there, just upstream sources...
+-	rm -rf debian/$(PACKAGE_DKMS)/usr/src/$(PACKAGE)-$(DEB_VERSION_UPSTREAM)/debian
+-	# We don't need the rhel stuff in there either
+-	rm -rf debian/$(PACKAGE_DKMS)/usr/src/$(PACKAGE)-$(DEB_VERSION_UPSTREAM)/rhel
+-	# And we should also clean useless license files, which are already
+-	# described in our debian/copyright anyway.
+-	rm -f debian/$(PACKAGE_DKMS)/usr/src/$(PACKAGE)-$(DEB_VERSION_UPSTREAM)/xenserver/LICENSE
+-
+ override_dh_installinit:
+ 	dh_installinit -R
+ 
+-override_dh_strip:
+-	dh_strip --dbg-package=openvswitch-dbg
+-
+ override_dh_usrlocal:
+ 
+ override_dh_installman:
+diff --git a/debian/rules.modules b/debian/rules.modules
+deleted file mode 100755
+index b0c6cdcee5..0000000000
+--- a/debian/rules.modules
++++ /dev/null
+@@ -1,39 +0,0 @@
+-#! /usr/bin/make -f
+-
+-PACKAGE=openvswitch-datapath-module
+-MA_DIR ?= /usr/share/modass
+--include $(MA_DIR)/include/generic.make
+--include $(MA_DIR)/include/common-rules.make
+-
+-DATAPATH_CONFIGURE_OPTS =
+-
+-kdist_clean:
+-	dh_testdir
+-	dh_testroot
+-	dh_clean
+-	rm -rf openvswitch
+-
+-.PHONY: kdist_config
+-kdist_config: prep-deb-files
+-
+-.PHONY: binary-modules
+-binary-modules: DSTDIR = $(CURDIR)/debian/$(PKGNAME)/lib/modules/$(KVERS)/updates
+-binary-modules: prep-deb-files
+-	dh_testdir
+-	dh_testroot
+-	dh_clean -k
+-	tar xzf openvswitch.tar.gz
+-	cd openvswitch && ./configure --with-linux=$(KSRC) $(DATAPATH_CONFIGURE_OPTS)
+-	cd openvswitch && $(MAKE) -C datapath/linux
+-	install -d -m755 $(DSTDIR)
+-	install -m644 openvswitch/datapath/linux/*.ko $(DSTDIR)/
+-	dh_installmodules
+-	dh_installdocs
+-	dh_installchangelogs
+-	dh_compress
+-	dh_fixperms
+-	dh_installdeb
+-	dh_gencontrol
+-	dh_md5sums
+-	dh_builddeb --destdir=$(DEB_DESTDIR)
+-

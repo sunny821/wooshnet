@@ -1,0 +1,10 @@
+ARG REPO=127.0.0.1:5000/wooshnet
+ARG GOARCH=amd64
+FROM ${REPO}/ovs:2.15.0-${GOARCH}
+ARG GOARCH=amd64
+WORKDIR /root
+COPY ./tools/install_cni.sh /
+COPY ./dist/${GOARCH}/wooshcni.zst /
+COPY ./dist/${GOARCH}/wooshnet /usr/local/bin/
+CMD ["sh"]
+

@@ -1,0 +1,51 @@
+From e19ff25f2464e67127c7eb1edef44803aa4a5462 Mon Sep 17 00:00:00 2001
+From: Mengxin Liu <mengxin@alauda.io>
+Date: Sun, 17 Jan 2021 10:35:43 +0800
+Subject: [PATCH] perf: do not generate lflows for down port
+
+---
+ northd/ovn-northd.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/northd/ovn-northd.c b/northd/ovn-northd.c
+index 5a32275687..fe246a3c61 100644
+--- a/northd/ovn-northd.c
++++ b/northd/ovn-northd.c
+@@ -4869,6 +4869,10 @@ build_lswitch_input_port_sec_op(
+         return;
+     }
+ 
++    if (!lsp_is_up(op->nbsp) && strcmp(op->nbsp->type, "localnet")) {
++        return;
++    }
++
+     ds_clear(match);
+     ds_clear(actions);
+     ds_put_format(match, "inport == %s", op->json_key);
+@@ -4923,7 +4927,7 @@ build_lswitch_output_port_sec(struct hmap *ports, struct hmap *datapaths,
+      * they don't even receive multicast or broadcast packets.
+      */
+     HMAP_FOR_EACH (op, key_node, ports) {
+-        if (!op->nbsp || lsp_is_external(op->nbsp)) {
++        if (!op->nbsp || lsp_is_external(op->nbsp) || (!lsp_is_up(op->nbsp) && strcmp(op->nbsp->type, "localnet"))) {
+             continue;
+         }
+ 
+@@ -7259,7 +7263,7 @@ build_lswitch_flows(struct hmap *datapaths, struct hmap *ports,
+ 
+     /* Ingress table 19: Destination lookup, unicast handling (priority 50), */
+     HMAP_FOR_EACH (op, key_node, ports) {
+-        if (!op->nbsp || lsp_is_external(op->nbsp)) {
++        if (!op->nbsp || lsp_is_external(op->nbsp)|| (!lsp_is_up(op->nbsp) && strcmp(op->nbsp->type, "localnet"))) {
+             continue;
+         }
+ 
+@@ -10331,7 +10335,7 @@ build_arp_resolve_flows_for_lrouter_port(
+         struct hmap *ports,
+         struct ds *match, struct ds *actions)
+ {
+-    if (op->nbsp && !lsp_is_enabled(op->nbsp)) {
++    if (op->nbsp && (!lsp_is_enabled(op->nbsp) || (!lsp_is_up(op->nbsp) && strcmp(op->nbsp->type, "localnet")))) {
+         return;
+     }
+ 

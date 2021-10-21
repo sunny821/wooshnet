@@ -1,0 +1,9 @@
+FROM ppc64le/alpine
+
+RUN mkdir /lib64 && ln -s /lib/libc.musl-ppc64le.so.1 /lib64/ld-linux-ppc64le.so.2
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
+RUN echo "export LC_ALL=zh_CN.UTF8" >> /etc/profile
+RUN apk add git tzdata socat make bash zstd util-linux curl
+ENV TZ Asia/Shanghai
+RUN wget -q https://golang.google.cn/dl/go1.17.2.linux-ppc64le.tar.gz && tar -zxvf go1.17.2.linux-ppc64le.tar.gz -C /usr/local/ && rm go1.17.2.linux-ppc64le.tar.gz
+ENV PATH=$PATH:/usr/local/go/bin GOPROXY="https://goproxy.cn,direct" CGO_ENABLED=0 GOPATH=/go

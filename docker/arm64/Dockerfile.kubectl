@@ -1,0 +1,8 @@
+FROM arm64v8/alpine:3.13
+
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
+RUN echo "export LC_ALL=zh_CN.UTF8" >> /etc/profile
+RUN apk add git tzdata socat make bash zstd util-linux curl
+ENV TZ Asia/Shanghai
+RUN curl -LO https://dl.k8s.io/release/v1.22.2/bin/linux/arm64/kubectl
+RUN chmod 755 kubectl && mv kubectl /usr/local/bin/

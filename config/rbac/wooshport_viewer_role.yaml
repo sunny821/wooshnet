@@ -1,0 +1,20 @@
+# permissions for end users to view wooshports.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: wooshport-viewer-role
+rules:
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - wooshports
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - wooshports/status
+  verbs:
+  - get

@@ -1,0 +1,23 @@
+From 8dd4973bba021ce92eb9f42446d6c1c0e3474e25 Mon Sep 17 00:00:00 2001
+From: Oilbeater <mengxin@alauda.io>
+Date: Wed, 13 Jan 2021 13:30:52 +0800
+Subject: [PATCH] increase election timer
+
+To void frequently leader flaps
+---
+ ovsdb/raft.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ovsdb/raft.c b/ovsdb/raft.c
+index 708b0624cf6..4da41840f4f 100644
+--- a/ovsdb/raft.c
++++ b/ovsdb/raft.c
+@@ -198,7 +198,7 @@ struct raft {
+      * most recently added to 'log'. */
+     struct hmap servers;
+ 
+-#define ELECTION_BASE_MSEC 1000
++#define ELECTION_BASE_MSEC 5000
+ #define ELECTION_RANGE_MSEC 1000
+     /* The election timeout base value for leader election, in milliseconds.
+      * It can be set by unixctl cluster/change-election-timer. Default value is

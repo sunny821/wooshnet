@@ -1,0 +1,11 @@
+apiVersion: network.wooshnet.cn/v1
+kind: VifPool
+metadata:
+  name: vifpool-sample
+spec:
+  # TODO(user): Add fields here
+  projectId: "6d46ff15c0f64374ba2d602de5b546d6"
+  netId: "bb993360-d2a7-4446-9ff6-3aee5634ad8f"
+  subnetId: "bccd79c6-108c-4abb-b23a-1f579a5e6a1e"
+  min: 3
+

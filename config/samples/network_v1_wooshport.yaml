@@ -1,0 +1,6 @@
+apiVersion: network.wooshnet.cn/v1
+kind: WooshPort
+metadata:
+  name: wooshport-sample
+spec:
+  # Add fields here

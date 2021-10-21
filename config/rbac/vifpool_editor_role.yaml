@@ -1,0 +1,24 @@
+# permissions for end users to edit vifpools.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vifpool-editor-role
+rules:
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - vifpools
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - network.wooshnet.cn
+  resources:
+  - vifpools/status
+  verbs:
+  - get
