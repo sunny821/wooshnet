@@ -132,6 +132,8 @@ spec:
         #     memory: 500Mi
         args:
           - --mode=daemon
+          - --metrics-bind-address=:8273
+          - --health-probe-bind-address=:8274
         securityContext:
           runAsUser: 0
           privileged: true
