@@ -17,4 +17,8 @@ TAG=dev-001 REPO=127.0.0.1/woosh sh tools/genyamls.sh
 # configmap
 kubectl apply -f yamls/woosh-config.yaml
 
+# wooshnet
+kubectl apply -f yamls/dev-001/wooshnet-controller.yaml
+kubectl apply -f yamls/dev-001/wooshnet-daemon.yaml
+
 ```
