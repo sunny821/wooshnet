@@ -7,7 +7,6 @@ RUN mkdir -p /root/tools && mkdir -p /root/yamls
 COPY ./tools/envtotext.${GOARCH} /root/tools/envtotext
 COPY ./yamls/template /root/yamls/template
 COPY ./yamls/multus.yaml /root/yamls/multus.yaml
-COPY ./yamls/portforwards.yaml /root/yamls/portforwards.yaml
 COPY ./tools/apply*.sh /root/
 COPY ./tools/genyamls.sh /root/
 RUN chmod 755 /root/tools/envtotext
