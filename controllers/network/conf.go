@@ -27,6 +27,7 @@ const (
 	WooshNetProjectID      = "projectId"
 	WooshNetNetID          = "netId"
 	WooshNetSecurityGroups = "securityGroups"
+	WooshNetSecurityGroup  = "securityGroup"
 	WooshNetSubnetID       = "subnetId"
 	WooshNetIPAddress      = "ipAddress"
 	WooshNetIFNamePrefix   = "eth"

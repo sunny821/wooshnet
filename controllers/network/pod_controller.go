@@ -289,6 +289,9 @@ func (r *PodReconciler) getPortsFromPodAnnotation(ctx context.Context, pod *core
 				}
 				port.SecurityGroups = securityGroups
 			}
+			if annotations[WooshNetSecurityGroup] != "" {
+				port.SecurityGroups = append(port.SecurityGroups, annotations[WooshNetSecurityGroup])
+			}
 			if annotations[WooshNetSubnetID] != "" {
 				port.FixedIPs = []networkv1.IP{
 					{
@@ -361,7 +364,6 @@ func (r *PodReconciler) getPortsFromNamespaceAnnotation(ns *v1.Namespace) ([]net
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
-	// 未指定WooshPort CR, 创建pod同名WooshPort CR
 	statusAnno := annotations[NetworkStatusAnnot]
 	if statusAnno == "" {
 		statusAnno = "[]"
