@@ -332,7 +332,7 @@ func moveToNetNS(netnspath, cniVersion string, obj *networkv1.WooshPort) (curren
 		}
 		for _, route := range result.Routes {
 			err = podns.Do(func(_ ns.NetNS) error {
-				return netlink.RouteAdd(&netlink.Route{
+				return netlink.RouteReplace(&netlink.Route{
 					LinkIndex: link.Attrs().Index,
 					Scope:     netlink.SCOPE_UNIVERSE,
 					Dst:       &route.Dst,
