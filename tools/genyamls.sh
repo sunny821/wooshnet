@@ -3,7 +3,7 @@
 echo $SHELL
 echo "BUILD_TIMESTAMP: ${BUILD_TIMESTAMP}"
 export GOARCH=${GOARCH:-amd64}
-export VERSION=${VERSION:-v0.1.7-${GOARCH}}
+export VERSION=${VERSION:-v0.2.0-${GOARCH}}
 if [ -n "${BUILD_TIMESTAMP}" ];then
     export VERSION=${VERSION}-${BUILD_TIMESTAMP}
 fi
