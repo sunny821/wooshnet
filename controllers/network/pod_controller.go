@@ -279,6 +279,16 @@ func (r *PodReconciler) getPortsFromPodAnnotation(ctx context.Context, pod *core
 				ProjectID: annotations[WooshNetProjectID],
 				NetworkID: annotations[WooshNetNetID],
 			}
+			if annotations[WooshNetSecurityGroups] != "" {
+				// '["aaa","bbb"]'
+				var securityGroups []string
+				err := json.Unmarshal([]byte(annotations[WooshNetSecurityGroups]), &securityGroups)
+				if err != nil {
+					klog.Errorln(err)
+					return nil, err
+				}
+				port.SecurityGroups = securityGroups
+			}
 			if annotations[WooshNetSubnetID] != "" {
 				port.FixedIPs = []networkv1.IP{
 					{

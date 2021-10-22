@@ -20,16 +20,17 @@ const (
 	// Old Pod annotation for network status (which is used before but it will be obsolated)
 	OldNetworkStatusAnnot = "k8s.v1.cni.cncf.io/networks-status"
 	// Pod annotation for wooshnet ips, ex: '[{"fixed_ips":{"subnet_id":"aaa"}},{"fixed_ips":{"subnet_id":"bbb", "ip_address":"192.168.10.10"}},{"fixed_ips":{"subnet_id":"ccc", "ip_address":"192.168.20.11"},"security_groups":["xxx","yyy"], "qos_policy_id":"xxxxid"}]'
-	WooshPortsAnnot      = "wooshnet/ports"
-	WooshPortStatus      = "wooshnet/portstatus"
-	WooshPortName        = "wooshnet/wooshport"
-	WooshNetType         = "wooshcni"
-	WooshNetProjectID    = "projectId"
-	WooshNetNetID        = "netId"
-	WooshNetSubnetID     = "subnetId"
-	WooshNetIPAddress    = "ipAddress"
-	WooshNetIFNamePrefix = "eth"
-	MultusPrefix         = "net"
+	WooshPortsAnnot        = "wooshnet/ports"
+	WooshPortStatus        = "wooshnet/portstatus"
+	WooshPortName          = "wooshnet/wooshport"
+	WooshNetType           = "wooshcni"
+	WooshNetProjectID      = "projectId"
+	WooshNetNetID          = "netId"
+	WooshNetSecurityGroups = "securityGroups"
+	WooshNetSubnetID       = "subnetId"
+	WooshNetIPAddress      = "ipAddress"
+	WooshNetIFNamePrefix   = "eth"
+	MultusPrefix           = "net"
 )
 
 type NetConf struct {
