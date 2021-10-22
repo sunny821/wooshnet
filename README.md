@@ -1,6 +1,6 @@
 # wooshnet
 
-A implement of CNI depending on neutron API
+An implement of CNI depending on neutron API
 
 ## build
 
